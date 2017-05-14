@@ -1,0 +1,1 @@
+PowerShell "$Process = Get-Process MSTRSvr2_64; $Process | Select-Object ProcessorAffinity;"

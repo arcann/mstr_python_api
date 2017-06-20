@@ -283,12 +283,21 @@ class CommandManager(object):
                                         password=new_password)
 
     def trigger_event(self, event_name: str):
-        trigger_template = "TRIGGER EVENT '{event_name}';"
-        self.execute_with_substitutions(trigger_template, event_name = event_name)
+        script = "TRIGGER EVENT '{event_name}';"
+        self.execute_with_substitutions(script, event_name=event_name)
 
     def purge_project_caches(self, project_name: str):
-        trigger_template = "PURGE ALL CACHING IN PROJECT '{project_name}';"
-        self.execute_with_substitutions(trigger_template, project_name=project_name)
+        script = "PURGE ALL CACHING IN PROJECT '{project_name}';"
+        self.execute_with_substitutions(script, project_name=project_name)
+
+    def find_running_jobs(self, user=None, project=None):
+        script = 'LIST JOBS'
+        if user:
+            script += ' FOR USER "{}"'.format(user)
+        if project:
+            script += ' FROM PROJECT "{}"'.format(project)
+        script += ';'
+        return self.execute(script, return_output=True)
 
 
 class CommandManagerException(Exception):

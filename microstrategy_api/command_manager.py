@@ -141,11 +141,11 @@ class CommandManager(object):
                     cmd.append('/C')
                 cmd.append(self.cmdmgr_path)
                 cmd.append('-n')
-                cmd.append('"' + self.project_source + '"')
+                cmd.append(self.project_source)
                 cmd.append('-u')
                 cmd.append(self.connect_user_id)
                 cmd.append('-p')
-                cmd.append('"' + self.connect_password + '"')
+                cmd.append(self.connect_password)
                 cmd.append('-f')
                 cmd.append(script_file.name)
                 cmd.append('-o')
@@ -153,7 +153,7 @@ class CommandManager(object):
 
                 if self.debug:
                     self.log.debug("run_command CMD=")
-                    self.log.debug(" ".join(cmd))
+                    self.log.debug("{}".format(cmd))
                     self.log.debug("run_command: Executing command manager")
                 try:
                     subprocess.check_output(cmd, stderr=subprocess.STDOUT)

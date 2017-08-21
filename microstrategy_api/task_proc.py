@@ -1,6 +1,11 @@
+import re
 import urllib.parse
 
 import functools
+from enum import Enum
+
+from typing import Optional
+
 import requests
 import logging
 
@@ -106,34 +111,418 @@ class TaskProc(object):
         """
         return Report(self, report_id)
 
-    def get_folder_contents(self, folder_id=None):
+    class SystemFolders(Enum):
+        PublicObjects = 1
+        Consolidations = 2
+        CustomGroups = 3
+        Filters = 4
+        Metrics = 5
+        Prompts = 6
+        Reports = 7
+        Searches = 8
+        Templates = 9
+
+    class ObjectType(Enum):
+        # https://lw.microstrategy.com/msdz/MSDL/GARelease_Current/docs/ReferenceFiles/reference/com/microstrategy/webapi/EnumDSSXMLObjectTypes.html#DssXmlTypeLayer
+        Generic = -2
+        Unknown = -1
+        AggMetric = 7
+        Attribute = 12
+        AttributeForm = 21
+        Blob = 63
+        Catalog = 24
+        CatalogDefn = 25
+        ChangeJournal = 66
+        Column = 26
+        Configuration = 36
+        Consolidation = 47
+        ConsolidationElement = 48
+        DBConnection = 31
+        DBLogin = 30
+        DBMS = 57
+        DBRole = 29
+        Datamart = 41
+        DatamartReport = 16
+        DbTable = 53
+        Device = 9
+        Dimension = 14
+        DocumentDefinition = 55
+        DossierPersonalView = 73
+        DrillMap = 56
+        ExternalShortcut = 67
+        ExternalShortcutTarget = 68
+        Fact = 13
+        FactGroup = 17
+        Filter = 1
+        Folder = 8
+        Format = 23
+        Function = 11
+        FunctionPackageDefinition = 42
+        Layer = 70
+        Link = 52
+        Locale = 45
+        MDSecurityFilter = 58
+        Metric = 4
+        Monitor = 20
+        ObjectTag = 65
+        Palette = 71
+        Project = 32
+        Prompt = 10
+        PromptAnswer = 59
+        PromptAnswers = 60
+        PropertySet = 28
+        Reconciliation = 69
+        ReportDefinition = 3
+        Request = 37
+        Reserved = 0
+        ReservedLastOne = 74
+        Resolution = 19
+        Role = 43
+        ScheduleEvent = 49
+        ScheduleObject = 50
+        ScheduleTrigger = 51
+        Schema = 22
+        Script = 38
+        Search = 39
+        SearchFolder = 40
+        SecurityRole = 44
+        ServerDef = 33
+        Shortcut = 18
+        Style = 6
+        SubscriptionDevice = 9
+        Table = 15
+        TableSource = 54
+        Template = 2
+        Thresholds = 72
+        Transmitter = 35
+
+    ObjectTypeIDDict = {member.value: member for member in ObjectType}
+
+    class ObjectSubType(Enum):
+        # https://lw.microstrategy.com/msdz/MSDL/GARelease_Current/docs/ReferenceFiles/reference/com/microstrategy/webapi/EnumDSSXMLObjectSubTypes.html
+        MetricTraining = 1028
+        AggMetric = 1792
+        Attribute = 3072
+        AttributeAbstract = 3075
+        AttributeForm = 5376
+        AttributeRecursive = 3076
+        AttributeRole = 3073
+        AttributeTransformation = 3074
+        BlobExcel = 16132
+        BlobHTMLTemplate = 16133
+        BlobImage = 16130
+        BlobOther = 16129
+        BlobProjectPackage = 16131
+        BlobUnknown = 16128
+        Catalog = 6144
+        CatalogDefn = 6400
+        ChangeJournal = 16896
+        ChangeJournalSearch = 15872
+        Column = 6656
+        Configuration = 9216
+        Consolidation = 12032
+        ConsolidationElement = 12288
+        ConsolidationManaged = 12033
+        CustomGroup = 257
+        DBConnection = 7936
+        DBLogin = 7680
+        DBMS = 14592
+        DBRole = 7424
+        DBRoleGenericDataConnector = 7430
+        DBRoleOAuth = 7427
+        DBTable = 13568
+        DBTablePMT = 13569
+        DashboardTemplate = 16384
+        Datamart = 10496
+        DatamartReport = 4096
+        DerivedAttribute = 3077
+        Device = 2304
+        DimensionOrdered = 3586
+        DimensionSystem = 3584
+        DimensionUser = 3585
+        DimensionUserHierarchy = 3587
+        DocumentDefinition = 14080
+        DocumentTheme = 14082
+        DrillMap = 14336
+        ExternalShortcutSnapshot = 17154
+        ExternalShortcutTarget = 17408
+        ExternalShortcutURL = 17153
+        ExternalShortcutUnknown = 17152
+        Fact = 3328
+        FactGroup = 4352
+        Filter = 256
+        Flag = 16640
+        Folder = 2048
+        FormNormal = 5378
+        FormSystem = 5377
+        Format = 5888
+        Function = 2816
+        FunctionPackageDefinition = 10752
+        GraphStyle = 15616
+        InBox = 11520
+        InBoxMsg = 11776
+        Link = 13312
+        MDSecurityFilter = 14848
+        Metric = 1024
+        MetricDMX = 1027
+        MonitorDBConnections = 15107
+        MonitorJobs = 15105
+        MonitorPerformance = 15104
+        MonitorUserConnections = 15106
+        PaletteCustom = 17921
+        PaletteSystem = 17920
+        Project = 8192
+        Prompt = 2560
+        PromptAnswer = 15232
+        PromptAnswerBigDecimal = 15243
+        PromptAnswerBoolean = 15233
+        PromptAnswerDate = 15237
+        PromptAnswerDimty = 15242
+        PromptAnswerDouble = 15236
+        PromptAnswerElements = 15239
+        PromptAnswerExpression = 15240
+        PromptAnswerExpressionDraft = 15241
+        PromptAnswerInt64 = 15244
+        PromptAnswerLong = 15234
+        PromptAnswerObjects = 15238
+        PromptAnswerString = 15235
+        PromptAnswers = 15360
+        PromptBigDecimal = 2571
+        PromptBoolean = 2561
+        PromptDate = 2565
+        PromptDimty = 2570
+        PromptDouble = 2564
+        PromptElements = 2567
+        PromptExpression = 2568
+        PromptExpressionDraft = 2569
+        PromptLong = 2562
+        PromptObjects = 2566
+        PromptString = 2563
+        PropertyGroup = 6912
+        PropertySet = 7168
+        Reconciliation = 17664
+        ReportBase = 773
+        ReportCube = 776
+        ReportDatamart = 772
+        ReportEmmaCube = 779
+        ReportEmmaIncrementalRefresh = 780
+        ReportEngine = 770
+        ReportGraph = 769
+        ReportGrid = 768
+        ReportGridAndGraph = 774
+        ReportIncrementalRefresh = 777
+        ReportNonInteractive = 775
+        ReportText = 771
+        ReportTransaction = 778
+        ReportWritingDocument = 14081
+        Request = 9472
+        Reserved = 0
+        Resolution = 4864
+        Role = 11008
+        RoleTransformation = 11009
+        ScheduleEvent = 12544
+        ScheduleObject = 12800
+        ScheduleTrigger = 13056
+        Schema = 5632
+        Search = 9984
+        SearchFolder = 10240
+        SecurityRole = 11264
+        ServerDef = 8448
+        Style = 1536
+        SubscriptionAddress = 65281
+        SubscriptionContact = 65282
+        SubscriptionInstance = 65283
+        SubtotalDefinition = 1025
+        SystemSubtotal = 1026
+        Table = 3840
+        TablePartitionMD = 3841
+        TablePartitionWH = 3842
+        TableSource = 13824
+        Template = 512
+        Thresholds = 18432
+        Transmitter = 8705
+        Unknown = -1
+        User = 8704
+
+    ObjectSubTypeIDDict = {member.value: member for member in ObjectSubType}
+
+    class FolderSortOrder(Enum):
+        # https://lw.microstrategy.com/msdz/MSDL/GARelease_Current/docs/ReferenceFiles/reference/com/microstrategy/web/objects/EnumWebObjectSort.html
+        ModificationTime = 7
+        NoSort = -1
+        ObjectDescription = 3
+        ObjectName = 2
+        ObjectNameFoldersFirst = 6
+        ObjectOwner = 4
+        ObjectType = 1
+        ObjectTypeDisplayOrder = 5
+
+    def get_folder_contents(self,
+                            folder_id: str=None,
+                            system_folder: Optional[SystemFolders]=7,
+                            type_restriction: Optional[set]=None,
+                            sort_key: Optional[FolderSortOrder]=None,
+                            sort_ascending: Optional[bool]=True,
+                            ):
         """Returns a dictionary with folder name, GUID, and description.
 
-        Args:
-            folder_id (str): guid of folder to list contents. If not supplied,
-                returns contents of root folder
+        Args
+        ----
+        folder_id:
+            guid of folder to list contents.
+            If not supplied, returns contents of system root folder as specified in system_folder
 
-        Returns:
+        system_folder:
+            The numeric ID of the System Folder to inspect. Values correspond to the fields of the
+            EnumDSSXMLFolderNames interface. If omitted, then the Shared Reports folder ('7') is used.
+
+        type_restriction:
+            A set of the object SubTypes to include in the contents.
+
+        sort_key:
+            How the elements of the folder are sorted. Sort keys are specified as integers, as described
+            by the EnumWebObjectSort interface. If omitted, then WebObjectSortObjectNameFoldersFirst is used.
+
+        sort_ascending:
+            Sort the results in ascending order, if False, then descending order will be used.
+
+
+        Returns
+        -------
             list: list of dictionaries with keys id, name, description, and type
                 as keys
         """
 
         arguments = {'sessionState': self._session,
-                     'taskID':       'folderBrowse'
+                     'taskID': 'folderBrowse',
+                     'includeObjectDesc': 'true',
+                     'showObjectTags': 'true',
                      }
         if folder_id:
             arguments.update({'folderID': folder_id})
-        response = self._request(arguments)
+        if system_folder:
+            if isinstance(system_folder, TaskProc.SystemFolders):
+                system_folder = system_folder.value
+            arguments.update({'systemFolder': system_folder})
+
+        if type_restriction is None:
+            # Note: Type 776 is added to the defaults to include cubes
+            type_restriction = '2048,768,769,774,776,14081'
+        elif not isinstance(type_restriction, str):
+            type_restriction = ','.join([str(item) for item in set(type_restriction)])
+        arguments.update({'typeRestriction': type_restriction})
+
+        if sort_key:
+            if isinstance(sort_key, TaskProc.FolderSortOrder):
+                sort_key = sort_key.value
+            arguments.update({'sortKey': sort_key})
+        if not sort_ascending:
+            arguments.update({'asc': 'false'})
+        try:
+            response = self._request(arguments)
+        except MstrClientException as e:
+            if 'The folder name is unknown to the server.' in e.args[0]:
+                raise FileNotFoundError("Folder ID {} not found".format(folder_id))
+            else:
+                raise e
         result = []
         for folder in response('folders'):
+            path_list = [path_folder.string for path_folder in folder.path.find_all('folder')]
             for obj in folder('obj'):
-                result.append({
+                object_dict = {
                     'name':        obj.find('n').string,
+                    'path':        path_list,
                     'description': obj.find('d').string,
-                    'id':          obj.find('id').string,
-                    'type':        obj.find('t').string
-                })
+                    'guid':        obj.find('id').string,
+                    'type':        obj.find('t').string,
+                    'subtype':     obj.find('st').string,
+                }
+                # for child in obj.children:
+                #     if child.name is not None:
+                #         if child.name not in ['n','d','id','t','st']:
+                #             print(child.name, child)
+                try:
+                    object_dict['type'] = int(object_dict['type'])
+                    if object_dict['type'] in TaskProc.ObjectTypeIDDict:
+                        object_dict['type'] = TaskProc.ObjectTypeIDDict[object_dict['type']]
+                except ValueError:
+                    pass
+                try:
+                    object_dict['subtype'] = int(object_dict['subtype'])
+                    if object_dict['subtype'] in TaskProc.ObjectSubTypeIDDict:
+                        object_dict['subtype'] = TaskProc.ObjectSubTypeIDDict[object_dict['subtype']]
+                except ValueError:
+                    pass
+                result.append(object_dict)
         return result
+
+    def get_folder_contents_by_name(self,
+                                    name,
+                                    type_restriction: Optional[set] = None,
+                                    sort_key: Optional[FolderSortOrder] = None,
+                                    sort_ascending: Optional[bool] = True,
+                                    ):
+        name_parts = re.split('[/\\\]', name)
+        if isinstance(type_restriction, str):
+            type_restriction = set(type_restriction.split(','))
+        folder_contents = []
+        sub_type_restriction = '2048'
+        for folder_name in name_parts:
+            if folder_name == 'Public Objects':
+                folder_contents = self.get_folder_contents(system_folder=TaskProc.SystemFolders.PublicObjects,
+                                                           type_restriction=sub_type_restriction,
+                                                           sort_key=sort_key,
+                                                           sort_ascending=sort_ascending,
+                                                           )
+            else:
+                found = False
+                for sub_folder in folder_contents:
+                    if sub_folder['name'] == folder_name:
+                        found = True
+                        if sub_folder['type'] == TaskProc.ObjectType.Folder:
+                            # If this is the last folder use the passed type_restriction
+                            if folder_name == name_parts[-1]:
+                                sub_type_restriction = type_restriction
+                            folder_contents = self.get_folder_contents(folder_id=sub_folder['guid'],
+                                                                       type_restriction=sub_type_restriction,
+                                                                       sort_key=sort_key,
+                                                                       sort_ascending=sort_ascending,
+                                                                       )
+                        else:
+                            folder_contents = sub_folder
+                if not found:
+                    raise FileNotFoundError("{} not found when reading folder {}".format(folder_name, name))
+        return folder_contents
+
+    def get_folder_recursive_contents(self,
+                                      guid: str = None,
+                                      name: str = None,
+                                      type_restriction: Optional[set] = None,
+                                      sort_key: Optional[FolderSortOrder] = None,
+                                      sort_ascending: Optional[bool] = True,
+                                      ):
+        if guid is not None:
+            folder_contents = self.get_folder_contents(folder_id=guid,
+                                                       type_restriction=type_restriction,
+                                                       sort_key=sort_key,
+                                                       sort_ascending=sort_ascending,
+                                                       )
+        elif name is not None:
+            folder_contents = self.get_folder_contents_by_name(name,
+                                                               type_restriction=type_restriction,
+                                                               sort_key=sort_key,
+                                                               sort_ascending=sort_ascending,
+                                                               )
+        else:
+            raise ValueError("get_folder_recursive_contents requires name or guid")
+
+        for item in folder_contents:
+            if item['type'] == TaskProc.ObjectType.Folder:
+                try:
+                    item['contents'] = self.get_folder_recursive_contents(guid=item['guid'])
+                except FileNotFoundError as e:
+                    item['contents'] = e
+        return folder_contents
 
     def list_elements(self, attribute_id):
         """
@@ -159,7 +548,7 @@ class TaskProc(object):
         return result
 
     def check_user_privileges(self, privilege_types="241"):
-        arguments = {'taskId':         'checkUserPrivileges',
+        arguments = {'taskId': 'checkUserPrivileges',
                      'privilegeTypes': privilege_types,
                      'sessionState':   self._session}
         response = self._request(arguments)
@@ -236,12 +625,13 @@ class MemoizeClass(type):
     Memoize parent class to preserve memory.
 
     Objects are considered to be the same, and thus a new object
-    does not need to be instantiated, if an object with given parameters.
+    does not need to be instantiated, if an object with given parameters already exists.
     """
 
     @functools.lru_cache(maxsize=5000)
     def __call__(cls, *args, **kwargs):
-        """Called when a new Singleton object is created.
+        """
+        Called when a new Singleton object is created.
 
         Singleton class checks to see if there is already a copy
         of the object in the class instances, and if so returns
@@ -252,7 +642,8 @@ class MemoizeClass(type):
 
 
 class Attribute(object, metaclass=MemoizeClass):
-    """ Object encapsulating an attribute on MicroStrategy
+    """
+    Object encapsulating an attribute on MicroStrategy
 
     An attribute can take many values, all of which are elements
     of that attribute. An attribute is defined by its name and
@@ -282,16 +673,19 @@ class AttributeForm(object, metaclass=MemoizeClass):
     """ 
     Object encapsulating an attribute form on MicroStrategy
 
-    Each attribute can have multiple forms (diffferent sets of source columns).
+    Each attribute can have multiple forms (different sets of source columns).
     Its __metaclass__ is Singleton.
 
     Args:
-        guid (str): guid for this attribute
-        name (str): the name of this attribute
+        form_guid (str): guid for this attribute
+        form_name (str): the name of this attribute
 
     Attributes:
         attribute: An instance of Attribute
-        name (str): attribute name
+        form_guid:
+            GUID for the form
+        form_name:
+            Name of the form
     """
     def __init__(self, attribute, form_guid, form_name):
         self.attribute = attribute
@@ -384,6 +778,46 @@ class Value(object):
         return '{self.header}={self.value}'.format(self=self)
 
 
+def _format_element_prompts(prompts) -> dict:
+    result = ''
+    for prompt, values in prompts.items():
+        if result:
+            result += ","
+        if values:
+            if isinstance(values, str):
+                values = [values]
+            prefix = ";" + prompt.attribute.guid + ":"
+            result = result + prompt.attribute.guid + ";" + prompt.attribute.guid + ":" + \
+                     prefix.join(values)
+        else:
+            result += prompt.attribute.guid + ";"
+    return {'elementsPromptAnswers': result}
+
+
+def _format_value_prompts(prompts) -> dict:
+    result = ''
+    for i, (prompt, s) in enumerate(prompts):
+        if i > 0:
+            result += '^'
+        if s:
+            result += s
+        elif not (s == '' and type(prompt) == Prompt):
+            raise MstrReportException("Invalid syntax for value prompt " +
+                                      "answers. Must pass (Prompt, string) tuples")
+    return {'valuePromptAnswers': result}
+
+
+def _format_xml_prompts(v_prompts, e_prompts) -> dict:
+    result = "<rsl>"
+    for p, s in v_prompts:
+        result = result + "<pa pt='5' pin='0' did='" + p.guid + \
+                 "' tp='10'>" + s + "</pa>"
+    result += "</rsl>"
+    d = _format_element_prompts(e_prompts)
+    d['promptsAnswerXML'] = result
+    return d
+
+
 class Report(object):
     """
     Encapsulates a report in MicroStrategy
@@ -433,7 +867,6 @@ class Report(object):
             self.log.error("failed retrieval of msgID in response %s" % response)
             raise MstrReportException("Error retrieving msgID for report. Most"
                                       + " likely the report does not have any prompts.")
-            return
         arguments = {
             'taskId':       'getPrompts',
             'objectType':   '3',
@@ -514,16 +947,19 @@ class Report(object):
         return self._attributes
 
     def _parse_attributes(self, response):
-        d = pq(response)
         self._attributes = []
         self._attribute_forms = []
-        for attr_element in d('a'):
+        for attr_element in response('a'):
             attr = Attribute(attr_element.find('did').string, attr_element.find('n').string)
             self._attributes.append(attr)
             # Look for multiple attribute forms
-            for form_element in attr_element.find('form'):
-                attr_form = AttributeForm(attr, form_element.attr('id'), form_element('name'))
-                self._attribute_forms.append(attr)
+            forms_elements = attr_element.find('fms')
+            if forms_elements:
+                for form_element in forms_elements:
+                    attr_form = AttributeForm(attr,
+                                              form_element.find('did').string,
+                                              form_element.find('n').string)
+                    self._attribute_forms.append(attr_form)
 
     def get_values(self):
         """ 
@@ -562,13 +998,23 @@ class Report(object):
                            " prior successful execution.")
             raise MstrReportException("Execute a report before viewing the metrics")
 
+    class ExecutionFlags(Enum):
+        Fresh = 1
+        UseCache = 128
+        UpdateCache = 256
+        Default = 384
+        CheckWebCache = 16777216
+        UseWebCacheOnly = 33554432
+
     def execute(self,
-                start_row=0,
-                start_col=0,
-                max_rows=100000,
-                max_cols=10,
-                value_prompt_answers=None,
-                element_prompt_answers=None):
+                start_row: int=0,
+                start_col: int=0,
+                max_rows: int=100000,
+                max_cols: int=10,
+                value_prompt_answers: Optional[list]=None,
+                element_prompt_answers: Optional[dict]=None,
+                execution_flags: Optional[set]=None,
+                ):
         """
         Execute a report.
 
@@ -576,24 +1022,33 @@ class Report(object):
         are chosen so that most likely all rows and columns will be
         retrieved in one call. However, a client could use pagination
         by cycling through calls of execute and changing the min and max
-        rows. Pagination is usefull when there is a risk of the amount of
+        rows. Pagination is useful when there is a risk of the amount of
         data causing the MicroStrategy API to run out of memory. The report
         supports any combination of optional/required value prompt answers
         and element prompt answers.
 
-        Args:
-            start_row (int): first row number to be returned
-            start_col (int): first column number to be returned
-            max_rows (int): maximum number of rows to return
-            max_cols (int): maximum number of columns to return
-            value_prompt_answers (list): list of (Prompts, strings) in order. If
-                a value is to be left blank, the second argument in the tuple
-                should be the empty string
-            element_prompt_answers: (dict) element prompt answers represented as a
-                dictionary of Prompt objects (with attr field specified)
-                mapping to a list of attribute values to pass
+        Arguments
+        ---------
+        start_row:
+            first row number to be returned
+        start_col:
+            first column number to be returned
+        max_rows:
+            maximum number of rows to return
+        max_cols:
+            maximum number of columns to return
+        value_prompt_answers:
+            list of (Prompts, strings) in order. If a value is to be left blank, the second argument in the tuple
+            should be the empty string
+        element_prompt_answers:
+            element prompt answers represented as a dictionary of Prompt objects (with attr field specified)
+            mapping to a list of attribute values to pass
 
-        Raises:
+        execution_flags:
+            Integer combination of values from
+
+        Raises
+        ------
             MstrReportException: if there was an error executing the report.
         """
         arguments = {
@@ -606,54 +1061,19 @@ class Report(object):
             'resultFlags': '393216'  # prevent columns from merging
         }
         if value_prompt_answers and element_prompt_answers:
-            arguments.update(self._format_xml_prompts(value_prompt_answers,
-                                                      element_prompt_answers)
-                            )
+            arguments.update(_format_xml_prompts(value_prompt_answers,
+                                                 element_prompt_answers)
+                             )
         elif value_prompt_answers:
-            arguments.update(self._format_value_prompts(value_prompt_answers))
+            arguments.update(_format_value_prompts(value_prompt_answers))
         elif element_prompt_answers:
-            arguments.update(self._format_element_prompts(element_prompt_answers))
+            arguments.update(_format_element_prompts(element_prompt_answers))
+        if execution_flags:
+            arguments['execFlags'] = execution_flags
         arguments.update(self._args)
         response = self._mstr_client._request(arguments)
         self._executed = True
         self._values = self._parse_report(response)
-
-    def _format_xml_prompts(self, v_prompts, e_prompts):
-        result = "<rsl>"
-        for p, s in v_prompts:
-            result = result + "<pa pt='5' pin='0' did='" + p.guid + \
-                     "' tp='10'>" + s + "</pa>"
-        result += "</rsl>"
-        d = self._format_element_prompts(e_prompts)
-        d['promptsAnswerXML'] = result
-        return d
-
-    def _format_value_prompts(self, prompts):
-        result = ''
-        for i, (prompt, s) in enumerate(prompts):
-            if i > 0:
-                result += '^'
-            if s:
-                result += s
-            elif not (s == '' and type(prompt) == Prompt):
-                raise MstrReportException("Invalid syntax for value prompt " +
-                                          "answers. Must pass (Prompt, string) tuples")
-        return {'valuePromptAnswers': result}
-
-    def _format_element_prompts(self, prompts):
-        result = ''
-        for prompt, values in prompts.items():
-            if result:
-                result += ","
-            if values:
-                if isinstance(values, str):
-                    values = [values]
-                prefix = ";" + prompt.attribute.guid + ":"
-                result = result + prompt.attribute.guid + ";" + prompt.attribute.guid + ":" + \
-                         prefix.join(values)
-            else:
-                result += prompt.attribute.guid + ";"
-        return {'elementsPromptAnswers': result}
 
     def _parse_report(self, response):
         if self._report_errors(response):

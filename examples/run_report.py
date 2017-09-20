@@ -7,11 +7,11 @@ import logging
 base_url = 'https://devtest.pepfar-panorama.org/MicroStrategy/asp/TaskProc.aspx?'
 
 
-def psnu_download(mstr_client):
-    log = logging.getLogger(__name__+'.psnu_download')
+def run_report(task_api_client, report_id, prompt_answers_by_seq=None):
+    log = logging.getLogger(__name__+'.run_report')
     log.setLevel(logging.DEBUG)
 
-    rpt = Report(mstr_client, report_id='4B0C2CA3453DAFB26B113E9171A4FBDE')
+    rpt = Report(task_api_client, guid=report_id)
     prompts = rpt.get_prompts()
     log.info("prompts:")
     log.info(prompts)
@@ -19,8 +19,11 @@ def psnu_download(mstr_client):
     log.info("attributes:")
     log.info(pformat(attributes))
 
-    # prompt_answers = {prompts[0]: 'HfVjCurKxh2'}  # Kenya
-    prompt_answers = {prompts[0]: 'PqlFzhuPcF1'}  # Nigeria
+    prompt_answers = dict()
+    if prompt_answers_by_seq is not None:
+        for prompt_number, prompt_answer in prompt_answers_by_seq.items():
+            prompt_answers[prompts[prompt_number]] = prompt_answer
+
     rpt.execute(element_prompt_answers=prompt_answers)
     values = rpt.get_values()
     log.info('Rows={}'.format(len(values)))
@@ -41,17 +44,20 @@ if __name__ == '__main__':
     logging.basicConfig()
     log = logging.getLogger(__name__)
     log.setLevel(logging.DEBUG)
-    user_name = 'PEPFAR'
-    project_source = 'WIN-NTHRJ60PG84'
-    project_name = 'PEPFAR Q3'
+    user_name = 'Administrator'
+    server = 'WIN-NTHRJ60PG84'
+    project_name = 'PEPFAR'
 
-    mstr_client = TaskProc(base_url=base_url,
-                           project_source=project_source,
+    task_api_client = TaskProc(base_url=base_url,
+                           server=server,
                            project_name=project_name,
                            username=user_name,
                            password=sys.argv[1])
 
-    psnu_download(mstr_client)
+    run_report(task_api_client,
+               report_id='4B0C2CA3453DAFB26B113E9171A4FBDE',
+               #prompt_answers_by_seq={0: 'PqlFzhuPcF1'}  # Nigeria
+    )
 
     log.info("Logging out")
-    mstr_client.logout()
+    task_api_client.logout()

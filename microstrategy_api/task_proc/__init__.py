@@ -6,6 +6,8 @@ import warnings
 from enum import Enum
 
 import time
+from fnmatch import fnmatch
+
 from typing import Optional, List
 
 import requests
@@ -235,6 +237,8 @@ class TaskProc(object):
                                     type_restriction: Optional[set]=None,
                                     sort_key: Optional[FolderSortOrder]=None,
                                     sort_ascending: Optional[bool]=True,
+                                    name_patterns_to_include: Optional[List[str]]=None,
+                                    name_patterns_to_exclude: Optional[List[str]]=None,
                                     ):
         """Returns a dictionary with folder name, GUID, and description.
 
@@ -258,12 +262,22 @@ class TaskProc(object):
         sort_ascending:
             Sort the results in ascending order, if False, then descending order will be used.
 
+        name_patterns_to_include:
+            A list of file name patterns (using * wildcards) to include. Not case sensitive.
+
+        name_patterns_to_exclude:
+            A list of file name patterns (using * wildcards) to exclude. Not case sensitive.
+
 
         Returns
         -------
             list: list of dictionaries with keys id, name, description, and type
                 as keys
         """
+        if isinstance(name_patterns_to_include, str):
+            name_patterns_to_include = [name_patterns_to_include]
+        if isinstance(name_patterns_to_exclude, str):
+            name_patterns_to_exclude = [name_patterns_to_exclude]
 
         arguments = {'sessionState': self._session,
                      'taskID': 'folderBrowse',
@@ -317,34 +331,64 @@ class TaskProc(object):
                 folder_name = 'Reports'
             path_list.append(folder_name)
             for obj in folder('obj'):
-                obj_inst = TaskProc.FolderObject(
-                              guid=obj.find('id').string,
-                              name=obj.find('n').string,
-                              path=path_list,
-                              description=obj.find('d').string,
-                              object_type=obj.find('t').string,
-                              object_subtype=obj.find('st').string,
-                           )
-                result.append(obj_inst)
+                name = obj.find('n').string
+                if name_patterns_to_include is None:
+                    name_ok = True
+                else:
+                    name_ok = False
+                    for include_pattern in name_patterns_to_include:
+                        if fnmatch(name.lower(), include_pattern.lower()):
+                            name_ok = True
+                if name_patterns_to_exclude is not None:
+                    for exclude_pattern in name_patterns_to_exclude:
+                        if fnmatch(name.lower(), exclude_pattern.lower()):
+                            name_ok = False
+
+                if name_ok:
+                    obj_inst = TaskProc.FolderObject(
+                                  guid=obj.find('id').string,
+                                  name=name,
+                                  path=path_list,
+                                  description=obj.find('d').string,
+                                  object_type=obj.find('t').string,
+                                  object_subtype=obj.find('st').string,
+                               )
+                    result.append(obj_inst)
         return result
+
+    @staticmethod
+    def path_parts(path):
+        # MSTR Paths should use \ separators, however, if the paths starts with / we'll try and use that
+        if len(path) == 0:
+            return []
+        elif path[0] == '/':
+            return re.split('[/\\\]', path)
+        else:
+            return re.split('[\\\]', path)
 
     def get_folder_contents_by_name(self,
                                     name,
                                     type_restriction: Optional[set] = None,
                                     sort_key: Optional[FolderSortOrder] = None,
                                     sort_ascending: Optional[bool] = True,
+                                    name_patterns_to_include: Optional[List[str]] = None,
+                                    name_patterns_to_exclude: Optional[List[str]] = None,
                                     ):
-        name_parts = re.split('[/\\\]', name)
+        if isinstance(name, str):
+            name_parts = TaskProc.path_parts(name)
+        else:
+            # Blindly assume it's an iterable type
+            name_parts = name
         if isinstance(type_restriction, str):
             type_restriction = set(type_restriction.split(','))
         folder_contents = []
-        sub_type_restriction = '2048'
+        intermediatefolder_type_restriction = {'2048'}
         for folder_name in name_parts:
             if folder_name == '':
                 pass
             elif folder_name == 'Public Objects':
                 folder_contents = self.get_folder_contents_by_guid(system_folder=TaskProc.SystemFolders.PublicObjects,
-                                                                   type_restriction=sub_type_restriction,
+                                                                   type_restriction=intermediatefolder_type_restriction,
                                                                    sort_key=sort_key,
                                                                    sort_ascending=sort_ascending,
                                                                    )
@@ -355,14 +399,24 @@ class TaskProc(object):
                     if sub_folder.name == folder_name:
                         found = True
                         if sub_folder.object_type == ObjectType.Folder:
-                            # If this is the last folder use the passed type_restriction
+                            # If this is the last folder use the passed type_restriction and name patterns
                             if folder_name == name_parts[-1]:
-                                sub_type_restriction = type_restriction
-                            new_folder_contents = self.get_folder_contents_by_guid(folder_guid=sub_folder.guid,
-                                                                                   type_restriction=sub_type_restriction,
-                                                                                   sort_key=sort_key,
-                                                                                   sort_ascending=sort_ascending,
-                                                                                   )
+                                new_folder_contents = self.get_folder_contents_by_guid(
+                                    folder_guid=sub_folder.guid,
+                                    type_restriction=type_restriction,
+                                    sort_key=sort_key,
+                                    sort_ascending=sort_ascending,
+                                    name_patterns_to_include=name_patterns_to_include,
+                                    name_patterns_to_exclude=name_patterns_to_exclude,
+                                )
+                            else:
+                                new_folder_contents = self.get_folder_contents_by_guid(
+                                    folder_guid=sub_folder.guid,
+                                    type_restriction=intermediatefolder_type_restriction,
+                                    sort_key=sort_key,
+                                    sort_ascending=sort_ascending,
+                                )
+
                         else:
                             new_folder_contents = sub_folder
                 if not found:
@@ -378,6 +432,8 @@ class TaskProc(object):
                             sort_ascending: Optional[bool] = True,
                             recursive: Optional[bool] = True,
                             flatten_structure: Optional[bool] = True,
+                            name_patterns_to_include: Optional[List[str]] = None,
+                            name_patterns_to_exclude: Optional[List[str]] = None,
                             ) -> List[FolderObject]:
         if type_restriction is not None:
             sub_type_restriction = type_restriction.copy()
@@ -386,17 +442,21 @@ class TaskProc(object):
         else:
             sub_type_restriction = None
 
-        if len(name) == 32 and '/' not in name and '\\' not in name:
+        if isinstance(name, str) and len(name) == 32 and '/' not in name and '\\' not in name:
             folder_contents = self.get_folder_contents_by_guid(folder_guid=name,
                                                                type_restriction=sub_type_restriction,
                                                                sort_key=sort_key,
                                                                sort_ascending=sort_ascending,
+                                                               name_patterns_to_include=name_patterns_to_include,
+                                                               name_patterns_to_exclude=name_patterns_to_exclude,
                                                                )
         else:
             folder_contents = self.get_folder_contents_by_name(name,
                                                                type_restriction=sub_type_restriction,
                                                                sort_key=sort_key,
                                                                sort_ascending=sort_ascending,
+                                                               name_patterns_to_include=name_patterns_to_include,
+                                                               name_patterns_to_exclude=name_patterns_to_exclude,
                                                                )
         if recursive:
             for item in folder_contents:
@@ -409,6 +469,8 @@ class TaskProc(object):
                                      sort_ascending=sort_ascending,
                                      recursive=recursive,
                                      flatten_structure=flatten_structure,
+                                     name_patterns_to_include=name_patterns_to_include,
+                                     name_patterns_to_exclude=name_patterns_to_exclude,
                                    )
                     except FileNotFoundError as e:
                         contents = e
@@ -424,6 +486,25 @@ class TaskProc(object):
                 folder_contents = [sub for sub in folder_contents if sub.object_subtype in type_restriction]
 
         return folder_contents
+
+    def get_folder_object(self,
+                          name: str,
+                          type_restriction: Optional[set] = None,
+                          ) -> FolderObject:
+        name_parts = TaskProc.path_parts(name)
+        folder_name = '/'.join(name_parts[:-1])
+        object_name = name_parts[-1]
+        folder_contents = self.get_folder_contents(folder_name, type_restriction=type_restriction, name_patterns_to_include=object_name)
+        if len(folder_contents) == 0:
+            raise FileNotFoundError("Folder {} does not contain {} (that matches type {})".format(
+                folder_name, object_name, type_restriction
+            ))
+        elif len(folder_contents) > 1:
+            raise FileNotFoundError("Folder {} does contains multiple matches for {} (that match type {})\n {}".format(
+                folder_name, object_name, type_restriction, folder_contents,
+            ))
+        else:
+            return folder_contents[0]
 
     def list_elements(self, attribute_id):
         """

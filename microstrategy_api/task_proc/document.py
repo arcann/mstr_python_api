@@ -1,8 +1,8 @@
 from typing import Optional
 
-from task_proc import ObjectType
 from task_proc.executable_base import ExecutableBase
-from task_proc.message import Message
+from task_proc.object_type import ObjectType
+from task_proc.task_proc import TaskProc
 
 
 class Document(ExecutableBase):
@@ -12,9 +12,12 @@ class Document(ExecutableBase):
     The most common use case will be to execute a document.
 
     Args:
-        task_api_client (TaskProc): client to be used to
-            make requests
-        guid (str): document guid
+        task_api_client:
+            client to be used to make requests
+        guid:
+            document guid
+        name:
+            Optional. Name of the doc/report
     """
 
     def __init__(self, task_api_client, guid, name=None):
@@ -32,6 +35,7 @@ class Document(ExecutableBase):
                 value_prompt_answers: Optional[list] = None,
                 element_prompt_answers: Optional[dict] = None,
                 refresh_cache: Optional[bool] = False,
+                task_api_client: TaskProc = None,
                 ):
         """
         Execute a report.
@@ -57,6 +61,8 @@ class Document(ExecutableBase):
             Do a new run against the data source?
         arguments:
             Other arbitrary arguments to pass to TaskProc.
+        task_api_client:
+            Alternative task_api_client to use when executing
 
         Raises
         ------
@@ -75,6 +81,7 @@ class Document(ExecutableBase):
             arguments=arguments,
             value_prompt_answers=value_prompt_answers,
             element_prompt_answers=element_prompt_answers,
-            refresh_cache=refresh_cache
+            refresh_cache=refresh_cache,
+            task_api_client=task_api_client,
         )
         return response

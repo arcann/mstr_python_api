@@ -1,12 +1,13 @@
 from bs4 import BeautifulSoup
 from typing import Optional
 
-from task_proc import ObjectType
 from task_proc.attribute import Attribute
 from task_proc.attribute_form import AttributeForm
 from task_proc.exceptions import MstrReportException
 from task_proc.executable_base import ExecutableBase
 from task_proc.metric import Metric
+from task_proc.object_type import ObjectType
+from task_proc.task_proc import TaskProc
 
 
 class Value(object):
@@ -173,6 +174,7 @@ class Report(ExecutableBase):
                 value_prompt_answers: Optional[list] = None,
                 element_prompt_answers: Optional[dict] = None,
                 arguments: Optional[dict] = None,
+                task_api_client: TaskProc = None,
                 ):
         """
         Execute a report and returns results.
@@ -206,6 +208,8 @@ class Report(ExecutableBase):
             Do a new run against the data source?
         arguments:
             Other arbitrary arguments to pass to TaskProc.
+        task_api_client:
+            Alternative task_api_client to use when executing
 
         Raises
         ------
@@ -227,6 +231,7 @@ class Report(ExecutableBase):
             element_prompt_answers=element_prompt_answers,
             refresh_cache=refresh_cache,
             arguments=arguments,
+            task_api_client=task_api_client,
         )
         self._executed = True
         self._values = self._parse_report(response)

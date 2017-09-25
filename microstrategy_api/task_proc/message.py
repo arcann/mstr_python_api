@@ -1,4 +1,6 @@
 import logging
+
+from bs4 import BeautifulSoup
 from typing import Optional
 
 from task_proc.exceptions import MstrReportException, MstrClientException
@@ -21,7 +23,7 @@ class Message(object):
                  guid: str=None,
                  st: str=None,
                  status: str=None,
-                 response: str=None):
+                 response: BeautifulSoup=None):
         self.message_type = message_type
         self.log = logging.getLogger("{mod}.{cls}".format(mod=self.__class__.__module__, cls=self.__class__.__name__))
         self.task_api_client = task_api_client
@@ -29,11 +31,15 @@ class Message(object):
         # https://lw.microstrategy.com/msdz/MSDL/GARelease_Current/docs/ReferenceFiles/reference/com/microstrategy/webapi/EnumDSSXMLStatus.html
         self.status = status
         self.st = st
+        self.message = None
         if response:
             self.set_from_response(response)
 
     def __str__(self):
-        return "{self.status} and st={self.st} for msg guid {self.guid}".format(self=self)
+        s = "{self.status} and st={self.st} for msg guid {self.guid}".format(self=self)
+        if self.message:
+            s += 'Msg= ' + str(self.message)
+        return s
 
     def set_from_response(self, response):
         message = response.find('msg')
@@ -65,3 +71,4 @@ class Message(object):
             self.set_from_response(response)
         except MstrClientException as e:
             self.status = Status.ErrMsg
+            self.message = e

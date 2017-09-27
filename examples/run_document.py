@@ -3,7 +3,7 @@ from pprint import pformat, pprint
 
 import logging
 
-from task_proc import TaskProc, Document
+from microstrategy_api.task_proc import TaskProc, Document
 
 base_url = 'https://devtest.pepfar-panorama.org/MicroStrategy/asp/TaskProc.aspx?'
 

@@ -1,8 +1,8 @@
 from typing import Optional
 
-from task_proc.executable_base import ExecutableBase
-from task_proc.object_type import ObjectType
-from task_proc.task_proc import TaskProc
+from microstrategy_api.task_proc.executable_base import ExecutableBase
+from microstrategy_api.task_proc.object_type import ObjectType
+from microstrategy_api.task_proc.task_proc import TaskProc
 
 
 class Document(ExecutableBase):

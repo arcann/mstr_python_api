@@ -1,13 +1,13 @@
 from bs4 import BeautifulSoup
 from typing import Optional
 
-from task_proc.task_proc import TaskProc
-from task_proc.attribute import Attribute
-from task_proc.exceptions import MstrReportException
-from task_proc.message import Message
-from task_proc.metadata_object import MetadataObject
-from task_proc.prompt import Prompt
-from task_proc.status import Status
+from microstrategy_api.task_proc.task_proc import TaskProc
+from microstrategy_api.task_proc.attribute import Attribute
+from microstrategy_api.task_proc.exceptions import MstrReportException
+from microstrategy_api.task_proc.message import Message
+from microstrategy_api.task_proc.metadata_object import MetadataObject
+from microstrategy_api.task_proc.prompt import Prompt
+from microstrategy_api.task_proc.status import Status
 
 
 class ExecutableBase(MetadataObject):

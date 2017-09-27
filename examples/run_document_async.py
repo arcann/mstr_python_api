@@ -1,13 +1,12 @@
 import sys
 import timeit
-from pprint import pformat, pprint
 
 import logging
 
 import time
 
-from task_proc import TaskProc, Document
-from task_proc.status import Status
+from microstrategy_api.task_proc import TaskProc, Document
+from microstrategy_api.task_proc.status import Status
 
 base_url = 'https://devtest.pepfar-panorama.org/MicroStrategy/asp/TaskProc.aspx?'
 

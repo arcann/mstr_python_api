@@ -6,9 +6,9 @@ import sys
 from datetime import datetime
 
 from microstrategy_api.task_proc import TaskProc, MstrClientException, Report, Document
-from task_proc import ObjectSubType, ObjectType
-from task_proc.executable_base import ExecutableBase
-from task_proc.status import Status
+from microstrategy_api.task_proc import ObjectSubType, ObjectType
+from microstrategy_api.task_proc.executable_base import ExecutableBase
+from microstrategy_api.task_proc.status import Status
 
 
 class ScheduleEntry(object):

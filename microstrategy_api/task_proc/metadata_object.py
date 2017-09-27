@@ -1,6 +1,6 @@
 import logging
 
-from task_proc.memoize_class import MemoizeClass
+from microstrategy_api.task_proc.memoize_class import MemoizeClass
 
 
 class MetadataObject(object, metaclass=MemoizeClass):

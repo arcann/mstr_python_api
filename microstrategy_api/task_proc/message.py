@@ -3,8 +3,8 @@ import logging
 from bs4 import BeautifulSoup
 from typing import Optional
 
-from task_proc.exceptions import MstrReportException, MstrClientException
-from task_proc.status import StatusIDDict, Status
+from microstrategy_api.task_proc.exceptions import MstrReportException, MstrClientException
+from microstrategy_api.task_proc.status import StatusIDDict, Status
 
 
 class Message(object):

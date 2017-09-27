@@ -1,13 +1,13 @@
 from bs4 import BeautifulSoup
 from typing import Optional
 
-from task_proc.attribute import Attribute
-from task_proc.attribute_form import AttributeForm
-from task_proc.exceptions import MstrReportException
-from task_proc.executable_base import ExecutableBase
-from task_proc.metric import Metric
-from task_proc.object_type import ObjectType
-from task_proc.task_proc import TaskProc
+from microstrategy_api.task_proc.attribute import Attribute
+from microstrategy_api.task_proc.attribute_form import AttributeForm
+from microstrategy_api.task_proc.exceptions import MstrReportException
+from microstrategy_api.task_proc.executable_base import ExecutableBase
+from microstrategy_api.task_proc.metric import Metric
+from microstrategy_api.task_proc.object_type import ObjectType
+from microstrategy_api.task_proc.task_proc import TaskProc
 
 
 class Value(object):

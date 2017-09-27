@@ -1,9 +1,9 @@
-from task_proc.attribute import Attribute
-from task_proc.exceptions import MstrClientException
-from task_proc.object_type import ObjectType, ObjectTypeIDDict, ObjectSubTypeIDDict, ObjectSubType
-from task_proc.task_proc import TaskProc
-from task_proc.report import Report
-from task_proc.document import Document
+from microstrategy_api.task_proc.attribute import Attribute
+from microstrategy_api.task_proc.exceptions import MstrClientException
+from microstrategy_api.task_proc.object_type import ObjectType, ObjectTypeIDDict, ObjectSubTypeIDDict, ObjectSubType
+from microstrategy_api.task_proc.task_proc import TaskProc
+from microstrategy_api.task_proc.report import Report
+from microstrategy_api.task_proc.document import Document
 
 """
 This API only supports xml format, as it relies on the format for parsing

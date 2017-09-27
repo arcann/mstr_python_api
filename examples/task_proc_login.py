@@ -1,6 +1,6 @@
 import sys
 
-from task_proc import TaskProc
+from microstrategy_api.task_proc import TaskProc
 
 
 def main():

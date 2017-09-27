@@ -15,10 +15,10 @@ import logging
 
 from bs4 import BeautifulSoup
 
-from task_proc.attribute import Attribute
-from task_proc.bit_set import BitSet
-from task_proc.exceptions import MstrClientException
-from task_proc.object_type import ObjectType, ObjectTypeIDDict, ObjectSubTypeIDDict, ObjectSubType
+from microstrategy_api.task_proc.attribute import Attribute
+from microstrategy_api.task_proc.bit_set import BitSet
+from microstrategy_api.task_proc.exceptions import MstrClientException
+from microstrategy_api.task_proc.object_type import ObjectType, ObjectTypeIDDict, ObjectSubTypeIDDict, ObjectSubType
 
 BASE_PARAMS = {'taskEnv': 'xml', 'taskContentType': 'xml'}
 

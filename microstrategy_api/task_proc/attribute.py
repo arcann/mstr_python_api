@@ -1,4 +1,4 @@
-from task_proc.metadata_object import MetadataObject
+from microstrategy_api.task_proc.metadata_object import MetadataObject
 
 
 class Attribute(MetadataObject):

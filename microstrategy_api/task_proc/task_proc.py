@@ -37,6 +37,8 @@ class TaskProc(object):
                  project_name=None,
                  session_state=None,
                  concurrent_max=5,
+                 max_retries=3,
+                 retry_delay=2,
                  ):
         """
         Initialize the MstrClient by logging in and retrieving a session.
@@ -73,6 +75,8 @@ class TaskProc(object):
             if server is None:
                 raise ValueError('Neither server nor project_source (depracated) parameter provided!')
 
+        self.retry_delay = retry_delay
+        self.max_retries = max_retries
         self.concurrent_max = concurrent_max
         self.server = server
         self.project_name = project_name
@@ -542,7 +546,7 @@ class TaskProc(object):
         if self.trace:
             self.log.debug("logging out returned %s" % result)
 
-    def request(self, arguments: dict, max_retries: int=1) -> BeautifulSoup:
+    def request(self, arguments: dict, max_retries: int=None) -> BeautifulSoup:
         """
         Assembles the url and performs a get request to
         the MicroStrategy Task Service API
@@ -557,6 +561,9 @@ class TaskProc(object):
         Returns:
             The xml response as a BeautifulSoup 4 object.
         """
+
+        if max_retries is None:
+            max_retries = self.max_retries
 
         arguments.update(BASE_PARAMS)
         for arg_name, arg_value in arguments.items():
@@ -618,7 +625,7 @@ class TaskProc(object):
             else:
                 if tries < max_retries:
                     self.log.debug("Request failed with error {}".format(exception))
-                    time.sleep(1.5)
+                    time.sleep(self.retry_delay)
                     self.log.debug("Retrying. Tries={} > {}".format(tries, max_retries))
                     tries += 1
                 else:

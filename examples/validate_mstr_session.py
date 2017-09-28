@@ -3,6 +3,7 @@ import logging
 import keyring
 
 from microstrategy_api.task_proc.exceptions import MstrClientException
+from microstrategy_api.task_proc.privilege_types import PrivilegeTypes
 from microstrategy_api.task_proc.task_proc import TaskProc
 
 base_url = 'https://devtest.pepfar-panorama.org/MicroStrategy/asp/TaskProc.aspx?'
@@ -23,7 +24,12 @@ def validate_session(session_state):
             log.debug('microstrategy_task_url = {}'.format(base_url))
             task_api_client = TaskProc(base_url=base_url, session_state=session_state)
             task_api_client.trace = True
-            privs = task_api_client.check_user_privileges()
+            privs = task_api_client.check_user_privileges(privilege_types={PrivilegeTypes.CreateAppObj})
+            log.debug('Session good. privs={p}'.format(p=privs))
+            if privs[PrivilegeTypes.CreateAppObj]:
+                log.info("Has required priv")
+            else:
+                log.info("DOES NOT HAVE REQUIRED PRIV")
             authorized = True
         except MstrClientException as e:
             log.debug('Session not valid for {} {}'.format(session_state, e))
@@ -36,7 +42,7 @@ if __name__ == '__main__':
     log.setLevel(logging.DEBUG)
     user_name = 'PEPFAR'
     password = keyring.get_password('Development', user_name)
-    project_source = 'WIN-NTHRJ60PG84'
+    server = 'WIN-NTHRJ60PG84'
     project_name = 'PEPFAR'
 
     session_state = None
@@ -48,7 +54,7 @@ if __name__ == '__main__':
     if session_state is None:
         task_api_client = TaskProc(
             base_url=base_url,
-            project_source=project_source,
+            server=server,
             project_name=project_name,
             username=user_name,
             password=password,
@@ -56,9 +62,28 @@ if __name__ == '__main__':
         session_state = task_api_client.session
         logout_session = True
 
-    log.info("validation_session")
+    log.info("validate_session")
     validate_session(session_state)
 
     if logout_session and task_api_client is not None:
         log.info("Logging out")
         task_api_client.logout()
+
+
+    log.info("Testing ANON session")
+    # For testing purposes make a valid ANON session
+    task_api_client = TaskProc(
+        base_url=base_url,
+        server=server,
+        project_name=project_name,
+    )
+    session_state = task_api_client.session
+    logout_session = True
+
+    log.info("validate_session for ANON")
+    validate_session(session_state)
+
+    if logout_session and task_api_client is not None:
+        log.info("Logging out")
+        task_api_client.logout()
+

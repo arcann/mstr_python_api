@@ -8,7 +8,7 @@ from enum import Enum
 import time
 from fnmatch import fnmatch
 
-from typing import Optional, List
+from typing import Optional, List, Set
 
 import requests
 import logging
@@ -16,6 +16,7 @@ import logging
 from bs4 import BeautifulSoup
 
 from microstrategy_api.task_proc.document import Document
+from microstrategy_api.task_proc.privilege_types import PrivilegeTypes, PrivilegeTypesIDDict
 from microstrategy_api.task_proc.report import Report
 from microstrategy_api.task_proc.attribute import Attribute
 from microstrategy_api.task_proc.bit_set import BitSet
@@ -67,17 +68,6 @@ class TaskProc(object):
         self._base_url = base_url
         self.cookies = None
         self.trace = False
-        if project_source is not None:
-            warnings.warn('project_source parameter is deprecated, use server parameter instead')
-            if server is None:
-                server = project_source
-            else:
-                warnings.warn('both project_source deprecated param and server parameter provided!'
-                              ' server parameter value used')
-        else:
-            if server is None:
-                raise ValueError('Neither server nor project_source (depracated) parameter provided!')
-
         self.retry_delay = retry_delay
         self.max_retries = max_retries
         self.concurrent_max = concurrent_max
@@ -85,15 +75,34 @@ class TaskProc(object):
         self.project_name = project_name
         self.username = username
         self.password = password
+
         if session_state is None:
-            self.login()
+            if project_source is not None:
+                warnings.warn('project_source parameter is deprecated, use server parameter instead')
+                if self.server is None:
+                    self.server = project_source
+                else:
+                    warnings.warn('both project_source deprecated param and server parameter provided!'
+                                  ' server parameter value used')
+            else:
+                if self.server is None:
+                    raise ValueError('Neither server nor project_source (deprecated) parameter provided!')
+            if self.username is not None:
+                self.login()
+            else:
+                self.login_guest()
         else:
             self._session = session_state
 
     def __str__(self):
         return 'MstrClient session: {}'.format(self._session)
 
-    def login(self, server: str=None, project_name: str=None, username: str=None, password: str=None):
+    def login(self,
+              server: str=None,
+              project_name: str=None,
+              username: str=None,
+              password: str=None,
+              ):
         """
         Login to taskproc API
 
@@ -133,6 +142,49 @@ class TaskProc(object):
                 'project':  self.project_name,
                 'uid':   self.username,
                 'pwd': self.password,
+                'rws': self.concurrent_max,
+            }
+        self.log.info("logging in.")
+        response = self.request(arguments)
+        if self.trace:
+            self.log.debug("logging in returned %s" % response)
+        # self._session_state = response.find('sessionState')
+        self._session = response.find('max-state').string
+
+    def login_guest(self,
+                    server: str=None,
+                    project_name: str=None,
+                    ):
+        """
+        Login to taskproc API
+
+        Arguments
+        ----------
+        server (str):
+            The machine name (or IP) of the MicroStrategy Intelligence Server to connect to.
+        project_name (str):
+            The name of the MicroStrategy project to connect to.
+
+        """
+        if server:
+            self.server = server
+        if project_name:
+            self.project_name = project_name
+
+        # getSessionState is used instead of login because we can set the rws parameter that way.
+        # arguments = {
+        #     'taskId':   'login',
+        #     'server':   self.server,
+        #     'project':  self.project_name,
+        #     'userid':   self.username,
+        #     'password': self.password
+        # }
+
+        arguments = {
+                'taskId':   'getSessionState',
+                'server':   self.server,
+                'project':  self.project_name,
+                'authMode':   8,
                 'rws': self.concurrent_max,
             }
         self.log.info("logging in.")
@@ -577,14 +629,31 @@ class TaskProc(object):
                 result.append(attr.find('n').string)
         return result
 
-    def check_user_privileges(self, privilege_types="241"):
+    def check_user_privileges(self, privilege_types: Set[PrivilegeTypes]=None) -> dict:
+        if privilege_types is None:
+            privilege_types = {PrivilegeTypes.WebExecuteAnalysis}
         arguments = {'taskId': 'checkUserPrivileges',
                      'privilegeTypes': privilege_types,
                      'sessionState':   self._session}
         response = self.request(arguments)
         priv_dict = dict()
-        for privilege in response.find('privilege'):
-            priv_dict[privilege['type']] = privilege['value']
+        priv_entries = response.find_all('privilege')
+        for privilege in priv_entries:
+            priv = privilege['type']
+            try:
+                priv = int(priv)
+                if priv in PrivilegeTypesIDDict:
+                    priv = PrivilegeTypesIDDict[priv]
+            except ValueError:
+                pass
+            value = privilege['value']
+            if value == '1':
+                value = True
+            elif value == '0':
+                value = False
+            else:
+                raise ValueError("Priv value {} is not valid in {}".format(value, priv_entries))
+            priv_dict[priv] = value
         return priv_dict
 
     def get_attribute(self, attribute_id):

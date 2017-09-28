@@ -1,7 +1,8 @@
-import sys
 from pprint import pformat
 
-from microstrategy_api.task_proc import TaskProc
+import keyring
+
+from microstrategy_api.task_proc.task_proc import TaskProc
 import logging
 
 base_url = 'https://devtest.pepfar-panorama.org/MicroStrategy/asp/TaskProc.aspx?'
@@ -12,7 +13,7 @@ if __name__ == '__main__':
     log = logging.getLogger(__name__)
     log.setLevel(logging.DEBUG)
     user_name = 'PEPFAR'
-    password = '2017Q1PublicQ2'
+    password = keyring.get_password('Development', user_name)
     server = 'WIN-NTHRJ60PG84'
     project_name = 'PEPFAR'
 
@@ -36,7 +37,7 @@ if __name__ == '__main__':
     # )
     # contents = task_api_client.get_folder_contents_by_name(r"Public Objects\Templates")
     contents = task_api_client.get_folder_contents_by_name(
-        '\Public Objects\Reports\POART\datasets\OVC',
+        '\Public Objects\Reports\POART\Datasets\OVC',
         type_restriction=set([2048, 768, 769, 774, 776, 14081]),
     )
     # contents = task_api_client.get_folder_contents_by_guid("F414193240E1D8AEE80EF8BFE72A6929")

@@ -10,5 +10,6 @@ def main():
     cmd = CommandManager(config=config)
     print(cmd.find_running_jobs())
 
+
 if __name__ == '__main__':
     main()

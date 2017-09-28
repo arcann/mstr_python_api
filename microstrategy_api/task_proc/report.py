@@ -7,7 +7,6 @@ from microstrategy_api.task_proc.exceptions import MstrReportException
 from microstrategy_api.task_proc.executable_base import ExecutableBase
 from microstrategy_api.task_proc.metric import Metric
 from microstrategy_api.task_proc.object_type import ObjectType
-from microstrategy_api.task_proc.task_proc import TaskProc
 
 
 class Value(object):
@@ -174,7 +173,7 @@ class Report(ExecutableBase):
                 value_prompt_answers: Optional[list] = None,
                 element_prompt_answers: Optional[dict] = None,
                 arguments: Optional[dict] = None,
-                task_api_client: TaskProc = None,
+                task_api_client: 'microstrategy_api.task_proc.task_prod.TaskProc' = None,
                 ):
         """
         Execute a report and returns results.

@@ -1,10 +1,9 @@
-import sys
 from pprint import pformat
 
 import keyring
 
-from microstrategy_api.task_proc.object_type import ObjectSubType
 from microstrategy_api.task_proc.task_proc import TaskProc
+from microstrategy_api.task_proc.object_type import ObjectSubType
 import logging
 
 
@@ -29,8 +28,9 @@ if __name__ == '__main__':
     )
 
     log.info("Calling get_folder_contents")
-    contents = task_api_client.get_folder_object(
-        '\Public Objects\Reports\POART\I-frames\OVC Visuals Dedup_Iframe',
+    contents = task_api_client.get_matching_objects_list(
+        path_list=['\Public Objects\Reports\POART\I-frames\*global*[r]'],
+        # path_list=['\Public Objects\Reports\POART\I-frames\[r]'],
         type_restriction={ObjectSubType.DocumentDefinition, ObjectSubType.ReportWritingDocument},
     )
     log.info("\n" + pformat(contents))

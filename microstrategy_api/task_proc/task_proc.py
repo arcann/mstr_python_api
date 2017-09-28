@@ -15,9 +15,12 @@ import logging
 
 from bs4 import BeautifulSoup
 
+from microstrategy_api.task_proc.document import Document
+from microstrategy_api.task_proc.report import Report
 from microstrategy_api.task_proc.attribute import Attribute
 from microstrategy_api.task_proc.bit_set import BitSet
 from microstrategy_api.task_proc.exceptions import MstrClientException
+from microstrategy_api.task_proc.executable_base import ExecutableBase
 from microstrategy_api.task_proc.object_type import ObjectType, ObjectTypeIDDict, ObjectSubTypeIDDict, ObjectSubType
 
 BASE_PARAMS = {'taskEnv': 'xml', 'taskContentType': 'xml'}
@@ -478,6 +481,78 @@ class TaskProc(object):
         else:
             return folder_contents[0]
 
+    def get_matching_objects_list(self, path_list: list, type_restriction: set) -> List[FolderObject]:
+        """
+        Get a list of matching FolderObjects based on a list of object name patterns.
+        Patterns accept wildcards:
+        - * for any set of characters. Allowed in the object name part of the path but not the folder name part.
+        - Patterns that end in [r] will match objects in any sub folder. Any non / characters immediately before
+          the [r] will be considered as an object name pattern to match in all sub folders.
+
+        Parameters
+        ----------
+        path_list:
+            A list of path patterns
+        type_restriction:
+            A set of ObjectSubType values to allow.
+
+
+        Returns
+        -------
+        A list of matching FolderObject
+        """
+        if isinstance(path_list, str):
+            path_list = [path_list]
+        result_list = list()
+        for path in path_list:
+            if path == '':
+                pass
+            elif path[-3:].lower() == '[r]':
+                # Ends in [r] so recursive search is needed
+                path_parts = self.path_parts(path)
+                folder = path_parts[:-1]
+                file_name = path_parts[-1][:-3]
+                if file_name == '':
+                    file_name_list = None
+                else:
+                    file_name_list = [file_name]
+                contents = self.get_folder_contents(
+                    name=folder,
+                    name_patterns_to_include=file_name_list,
+                    recursive=True,
+                    flatten_structure=True,
+                    type_restriction=type_restriction,
+                )
+                if len(contents) == 0:
+                    self.log.warning("Path pattern {} returned no matches".format(path))
+                result_list.extend(contents)
+            else:
+                # Non recursive pass last part as name_patterns_to_include
+                path_parts = self.path_parts(path)
+                contents = self.get_folder_contents(
+                    name=path_parts[:-1],
+                    name_patterns_to_include=path_parts[-1],
+                    recursive=False,
+                    flatten_structure=True,
+                    type_restriction=type_restriction,
+                )
+                if len(contents) == 0:
+                    self.log.warning("Path pattern {} returned no matches".format(path))
+                result_list.extend(contents)
+        return result_list
+
+    def get_executable_object(self, folder_obj: FolderObject) -> ExecutableBase:
+        # Check based on object type
+        if folder_obj.object_subtype == ObjectSubType.ReportWritingDocument:
+            # Document
+            return Document(self, guid=folder_obj.guid, name=folder_obj.full_name())
+        elif folder_obj.object_subtype == ObjectSubType.ReportCube:
+            # Cube
+            return Report(self, guid=folder_obj.guid, name=folder_obj.full_name())
+        else:
+            # Regular report
+            return Report(self, guid=folder_obj.guid, name=folder_obj.full_name())
+
     def list_elements(self, attribute_id):
         """
         Returns the elements associated with the given attribute id.
@@ -626,7 +701,7 @@ class TaskProc(object):
                 if tries < max_retries:
                     self.log.debug("Request failed with error {}".format(exception))
                     time.sleep(self.retry_delay)
-                    self.log.debug("Retrying. Tries={} > {}".format(tries, max_retries))
+                    self.log.debug("Retrying. Tries={} < {} max".format(tries, max_retries))
                     tries += 1
                 else:
                     raise exception

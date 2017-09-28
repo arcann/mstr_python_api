@@ -1,7 +1,6 @@
 from bs4 import BeautifulSoup
 from typing import Optional
 
-from microstrategy_api.task_proc.task_proc import TaskProc
 from microstrategy_api.task_proc.attribute import Attribute
 from microstrategy_api.task_proc.exceptions import MstrReportException
 from microstrategy_api.task_proc.message import Message
@@ -23,7 +22,7 @@ class ExecutableBase(MetadataObject):
             Optional. Name of the doc/report
     """
 
-    def __init__(self, task_api_client: TaskProc, guid, name=None):
+    def __init__(self, task_api_client: 'microstrategy_api.task_proc.task_prod.TaskProc', guid, name=None):
         super().__init__(guid, name)
         self.object_type = None
         self.obect_id_param = 'objectID'
@@ -87,7 +86,7 @@ class ExecutableBase(MetadataObject):
             value_prompt_answers: Optional[list] = None,
             element_prompt_answers: Optional[dict] = None,
             refresh_cache: Optional[bool] = False,
-            task_api_client: TaskProc=None,
+            task_api_client: 'microstrategy_api.task_proc.task_prod.TaskProc'=None,
             ) -> BeautifulSoup:
         """
         Execute a report/document. Returns a bs4 document.
@@ -153,7 +152,7 @@ class ExecutableBase(MetadataObject):
                       element_prompt_answers: Optional[dict] = None,
                       refresh_cache: Optional[bool] = False,
                       max_wait_secs: Optional[int] = 1,
-                      task_api_client: TaskProc = None,
+                      task_api_client: 'microstrategy_api.task_proc.task_prod.TaskProc' = None,
                       ) -> Message:
         """
         Execute a report/document without waiting. Returns a Message.

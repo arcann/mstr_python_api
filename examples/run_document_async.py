@@ -5,8 +5,11 @@ import logging
 
 import time
 
-from microstrategy_api.task_proc import TaskProc, Document
+import keyring
+
+from microstrategy_api.task_proc.document import Document
 from microstrategy_api.task_proc.status import Status
+from microstrategy_api.task_proc.task_proc import TaskProc
 
 base_url = 'https://devtest.pepfar-panorama.org/MicroStrategy/asp/TaskProc.aspx?'
 
@@ -57,15 +60,17 @@ if __name__ == '__main__':
     log.setLevel(logging.DEBUG)
 
     user_name = 'Administrator'
-    password = sys.argv[1]
+    password = keyring.get_password('Development', user_name)
     server = 'WIN-NTHRJ60PG84'
     project_name = 'PEPFAR'
 
-    task_api_client = TaskProc(base_url=base_url,
-                           server=server,
-                           project_name=project_name,
-                           username=user_name,
-                           password=password)
+    task_api_client = TaskProc(
+        base_url=base_url,
+        server=server,
+        project_name=project_name,
+        username=user_name,
+        password=password,
+    )
 
     OU_GUID = '7039371C4B5CC07DC6682D9C0EC8F45C'
 

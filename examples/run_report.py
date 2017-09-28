@@ -1,8 +1,12 @@
 import sys
 from pprint import pformat
 
-from microstrategy_api.task_proc import TaskProc, MstrClientException, Report
 import logging
+
+import keyring
+
+from microstrategy_api.task_proc.report import Report
+from microstrategy_api.task_proc.task_proc import TaskProc
 
 base_url = 'https://devtest.pepfar-panorama.org/MicroStrategy/asp/TaskProc.aspx?'
 
@@ -45,14 +49,17 @@ if __name__ == '__main__':
     log = logging.getLogger(__name__)
     log.setLevel(logging.DEBUG)
     user_name = 'Administrator'
+    password = keyring.get_password('Development', user_name)
     server = 'WIN-NTHRJ60PG84'
     project_name = 'PEPFAR'
 
-    task_api_client = TaskProc(base_url=base_url,
-                           server=server,
-                           project_name=project_name,
-                           username=user_name,
-                           password=sys.argv[1])
+    task_api_client = TaskProc(
+        base_url=base_url,
+        server=server,
+        project_name=project_name,
+        username=user_name,
+        password=password,
+    )
 
     run_report(task_api_client,
                report_id='4B0C2CA3453DAFB26B113E9171A4FBDE',

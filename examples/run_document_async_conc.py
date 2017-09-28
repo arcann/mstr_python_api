@@ -3,12 +3,14 @@ import random
 import time
 
 import sys
+
+import keyring
 from datetime import datetime
 
-from microstrategy_api.task_proc import TaskProc, MstrClientException, Report, Document
-from microstrategy_api.task_proc import ObjectSubType, ObjectType
 from microstrategy_api.task_proc.executable_base import ExecutableBase
+from microstrategy_api.task_proc.object_type import ObjectSubType
 from microstrategy_api.task_proc.status import Status
+from microstrategy_api.task_proc.task_proc import TaskProc
 
 
 class ScheduleEntry(object):
@@ -105,18 +107,6 @@ class RunConcurrent(object):
     def add_to_schedule(self, schedule_entry):
         self._schedule_entries.append(schedule_entry)
 
-    def get_executable_object(self, folder_obj: TaskProc.FolderObject):
-        # If document
-        if folder_obj.object_subtype == ObjectSubType.ReportWritingDocument:
-            # Document
-            return Document(self.task_client, guid=folder_obj.guid, name=folder_obj.full_name())
-        elif folder_obj.object_subtype == ObjectSubType.ReportCube:
-            # Cube
-            return Report(self.task_client, guid=folder_obj.guid, name=folder_obj.full_name())
-        else:
-            # Dataset
-            return Report(self.task_client, guid=folder_obj.guid, name=folder_obj.full_name())
-
     def _wait(self):
         jobs_are_running = True
         while jobs_are_running:
@@ -207,7 +197,7 @@ class RunConcurrent(object):
     def run(self, jobs_to_create=50):
         project = "PEPFAR"
         user_name = 'Administrator'
-        password = sys.argv[1]
+        password = keyring.get_password('Development', user_name)
         self.project = project
 
         self.task_client = TaskProc(base_url='https://devtest.pepfar-panorama.org/MicroStrategy/asp/TaskProc.aspx?',
@@ -250,7 +240,7 @@ class RunConcurrent(object):
             jobs_to_create = conc * 3
             for folder_obj in folder_objs:
                 if folder_obj.object_subtype != ObjectSubType.Folder and folder_obj.name in test_reports:
-                    executable_object = self.get_executable_object(folder_obj)
+                    executable_object = self.task_client.get_executable_object(folder_obj)
 
                     ou_prompt = None
                     prompts = executable_object.get_prompts()

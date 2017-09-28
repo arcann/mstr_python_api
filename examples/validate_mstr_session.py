@@ -1,7 +1,9 @@
-import sys
-
-from microstrategy_api.task_proc import TaskProc, MstrClientException
 import logging
+
+import keyring
+
+from microstrategy_api.task_proc.exceptions import MstrClientException
+from microstrategy_api.task_proc.task_proc import TaskProc
 
 base_url = 'https://devtest.pepfar-panorama.org/MicroStrategy/asp/TaskProc.aspx?'
 
@@ -33,6 +35,7 @@ if __name__ == '__main__':
     log = logging.getLogger(__name__)
     log.setLevel(logging.DEBUG)
     user_name = 'PEPFAR'
+    password = keyring.get_password('Development', user_name)
     project_source = 'WIN-NTHRJ60PG84'
     project_name = 'PEPFAR'
 
@@ -43,11 +46,13 @@ if __name__ == '__main__':
 
     # For testing purposes make a valid session
     if session_state is None:
-        task_api_client = TaskProc(base_url=base_url,
-                               project_source=project_source,
-                               project_name=project_name,
-                               username=user_name,
-                               password=sys.argv[1])
+        task_api_client = TaskProc(
+            base_url=base_url,
+            project_source=project_source,
+            project_name=project_name,
+            username=user_name,
+            password=password,
+        )
         session_state = task_api_client.session
         logout_session = True
 

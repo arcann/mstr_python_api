@@ -198,16 +198,110 @@ class TaskProc(object):
     def session(self):
         return self._session
 
-    class SystemFolders(Enum):
-        PublicObjects = 1
-        Consolidations = 2
-        CustomGroups = 3
-        Filters = 4
-        Metrics = 5
-        Prompts = 6
-        Reports = 7
-        Searches = 8
-        Templates = 9
+    class SystemFolders(Enum):  # EnumDSSXMLFolderNames
+        """
+        This interface defines the enumeration constants used to specify the folder names internally defined in MicroStrategy 7.
+        """
+
+        PublicObjects = 1  # DssXmlFolderNamePublicObjects Specifies the folder "Public Objects".
+        PublicConsolidations = 2  # DssXmlFolderNamePublicConsolidations Specifies the folder "Consolidations" under the folder "Public Objects".
+        PublicCustomGroups = 3  # DssXmlFolderNamePublicCustomGroups Specifies the folder "Custom Groups" under the folder "Public Objects".
+        PublicFilters = 4  # DssXmlFolderNamePublicFilters Specifies the folder "Filters" under the folder "Public Objects".
+        PublicMetrics = 5  # DssXmlFolderNamePublicMetrics Specifies the folder "Metrics" under the folder "Public Objects".
+        PublicPrompts = 6  # DssXmlFolderNamePublicPrompts Specifies the folder "Prompts" under the folder "Public Objects".
+        PublicReports = 7  # DssXmlFolderNamePublicReports Specifies the folder "Reports" under the folder "Public Objects".
+        PublicSearches = 8  # DssXmlFolderNamePublicSearches Specifies the folder "Searches" under the folder "Public Objects".
+        PublicTemplates = 9  # DssXmlFolderNamePublicTemplates Specifies the folder "Templates" under the folder "Public Objects".
+        TemplateObjects = 10  # DssXmlFolderNameTemplateObjects Specifies the folder "Template Objects".
+        TemplateConsolidations = 11  # DssXmlFolderNameTemplateConsolidations Specifies the folder "Consolidations" under the folder "Template Objects".
+        TemplateCustomGroups = 12  # DssXmlFolderNameTemplateCustomGroups Specifies the folder "Custom Groups" under the folder "Template Objects".
+        TemplateFilters = 13  # DssXmlFolderNameTemplateFilters Specifies the folder "Filters" under the folder "Template Objects".
+        TemplateMetrics = 14  # DssXmlFolderNameTemplateMetrics Specifies the folder "Metrics" under the folder "Template Objects".
+        TemplatePrompts = 15  # DssXmlFolderNameTemplatePrompts Specifies the folder "Prompts" under the folder "Template Objects".
+        TemplateReports = 16  # DssXmlFolderNameTemplateReports Specifies the folder "Reports" under the folder "Template Objects".
+        TemplateSearches = 17  # DssXmlFolderNameTemplateSearches Specifies the folder "Searches" under the folder "Template Objects".
+        TemplateTemplates = 18  # DssXmlFolderNameTemplateTemplates Specifies the folder "Templates" under the folder "Template Objects".
+        ProfileObjects = 19  # DssXmlFolderNameProfileObjects Specifies the folder "Profile" of a user.
+        ProfileReports = 20  # DssXmlFolderNameProfileReports Specifies the folder "Reports" under the folder "Profile" of a user.
+        ProfileAnswers = 21  # DssXmlFolderNameProfileAnswers Specifies the folder "Answers" under the folder "Profile" of a user.
+        ProfileFavorites = 22  # DssXmlFolderNameProfileFavorites Specifies the folder "Favorites" under the folder "Profile" of a user.
+        ProfileOther = 23  # DssXmlFolderNameProfileOther Specifies the folder "Other" under the folder "Profile" of a user.
+        SchemaObjects = 24  # DssXmlFolderNameSchemaObjects Specifies the folder "Schema Objects".
+        SchemaAttributeForms = 25  # DssXmlFolderNameSchemaAttributeForms Specifies the folder "Attribute Forms" under the folder "Schema Objects".
+        SchemaAttributes = 26  # DssXmlFolderNameSchemaAttributes Specifies the folder "Attributes" under the folder "Schema Objects".
+        SchemaColumns = 27  # DssXmlFolderNameSchemaColumns Specifies the folder "Columns" under the folder "Schema Objects".
+        SchemaDataExplorer = 28  # DssXmlFolderNameSchemaDataExplorer Specifies the folder "Data Explorer" under the folder "Schema Objects".
+        SchemaFacts = 29  # DssXmlFolderNameSchemaFacts Specifies the folder "Facts" under the folder "Schema Objects".
+        SchemaFunctions = 30  # DssXmlFolderNameSchemaFunctions Specifies the folder "Functions" under the folder "Schema Objects".
+        SchemaHierarchies = 31  # DssXmlFolderNameSchemaHierarchies Specifies the folder "Hierarchies" under the folder "Schema Objects".
+        SchemaPartitionFilters = 32  # DssXmlFolderNameSchemaPartitionFilters Specifies the folder "Partition Filters" under the folder "Schema Objects".
+        SchemaPartitionMappings = 33  # DssXmlFolderNameSchemaPartitionMappings Specifies the folder "Partition Mappings" under the folder "Schema Objects".
+        SchemaSubtotals = 34  # DssXmlFolderNameSchemaSubtotals Specifies the folder"Subtotals" under the folder "Schema Objects".
+        SchemaTables = 35  # DssXmlFolderNameSchemaTables Specifies the folder "Tables" under the folder "Schema Objects".
+        SchemaWarehouseTables = 36  # DssXmlFolderNameSchemaWarehouseTables Specifies the folder "Warehouse Tables" under the folder "Schema Objects".
+        SchemaTransformationAttributes = 37  # DssXmlFolderNameSchemaTransformationAttributes Specifies the folder "Transformation Attributes" under the folder "Schema Objects".
+        SchemaTransformations = 38  # DssXmlFolderNameSchemaTransformations Specifies the folder "Transformations" under the folder "Schema Objects".
+        Root = 39  # DssXmlFolderNameRoot Specifies the root folder of the project.
+        SchemaFunctionsNested = 40  # DssXmlFolderNameSchemaFunctionsNested Specifies the "Functions" folder nested several levels deep in the "Schema Objects" folder.
+        SchemaBasicFunctions = 41  # DssXmlFolderNameSchemaBasicFunctions Specifies the "Basic Functions" folder nested several levels deep in the "Schema Objects" folder.
+        SchemaDateAndTimeFunctions = 42  # DssXmlFolderNameSchemaDateAndTimeFunctions Specifies the "Date and Time Functions" folder nested several levels deep in the "Schema Objects" folder.
+        SchemaInternalFunctions = 43  # DssXmlFolderNameSchemaInternalFunctions Specifies the "Internal Functions" folder nested several levels deep in the "Schema Objects" folder.
+        SchemaNullZeroFunctions = 44  # DssXmlFolderNameSchemaNullZeroFunctions Specifies the "Null/Zero Functions" folder nested several levels deep in the "Schema Objects" folder.
+        SchemaOlapFunctions = 45  # DssXmlFolderNameSchemaOlapFunctions Specifies the "OLAP Functions" folder nested several levels deep in the "Schema Objects" folder.
+        SchemaRankAndNTileFunctions = 46  # DssXmlFolderNameSchemaRankAndNTileFunctions Specifies the "Rank and NTile Functions" folder nested several levels deep in the "Schema Objects" folder.
+        SchemaStringFunctions = 47  # DssXmlFolderNameSchemaStringFunctions Specifies the "String Functions" folder nested several levels deep in the "Schema Objects" folder.
+        SchemaOperators = 48  # DssXmlFolderNameSchemaOperators Specifies the "Operators" folder nested several levels deep in the "Schema Objects" folder.
+        SchemaArithmeticOperators = 49  # DssXmlFolderNameSchemaArithmeticOperators Specifies the "Arithmetic Operators" folder nested several levels deep in the "Schema Objects" folder.
+        SchemaComparisonOperators = 50  # DssXmlFolderNameSchemaComparisonOperators Specifies the "Comparison Operators" folder nested several levels deep in the "Schema Objects" folder.
+        SchemaComparisonForRankOperators = 51  # DssXmlFolderNameSchemaComparisonForRankOperators Specifies the "Comparison Operators for Rank" folder nested several levels deep in the "Schema Objects" folder.
+        SchemaLogicalOperators = 52  # DssXmlFolderNameSchemaLogicalOperators Specifies the "Logical Operators" folder nested several levels deep in the "Schema Objects" folder.
+        SchemaPlugInPackages = 53  # DssXmlFolderNameSchemaPlugInPackages Specifies the "Plug-In Packages" folder nested several levels deep in the "Schema Objects" folder.
+        SchemaFinancialFunctions = 54  # DssXmlFolderNameSchemaFinancialFunctions Specifies the "Financial Functions" folder nested several levels deep in the "Schema Objects" folder.
+        SchemaMathFunctions = 55  # DssXmlFolderNameSchemaMathFunctions Specifies the "Math Functions" folder nested several levels deep in the "Schema Objects" folder.
+        SchemaStatisticalFunctions = 56  # DssXmlFolderNameSchemaStatisticalFunctions Specifies the "Statistical Functions" folder nested several levels deep in the "Schema Objects" folder.
+        AutoStyles = 57  # DssXmlFolderNameAutoStyles Specifies the "AutoStyles" folder in the "Public Objects" folder.
+        ConfigureMonitors = 58  # DssXmlFolderNameConfigureMonitors Specifies the "Monitors" folder in the Configuration.
+        ConfigureServerDefs = 59  # DssXmlFolderNameConfigureServerDefs Specifies the "Server Definitions" folder in the Configuration.
+        TemplateDocuments = 60  # DssXmlFolderNameTemplateDocuments Specifies the "Template Documents" folder.
+        SystemObjects = 61  # DssXmlFolderNameSystemObjects Specifies the "System Objects" folder.
+        SystemLinks = 62  # DssXmlFolderNameSystemLinks Specifies the "System Links" folder.
+        SystemPropertySets = 63  # DssXmlFolderNameSystemPropertySets Specifies the "System Property sets" folder.
+        SystemParserFolder = 64  # DssXmlFolderNameSystemParserFolder Specifies the "System Parser" folder.
+        SystemSchemaFolder = 65  # DssXmlFolderNameSystemSchemaFolder Specifies the "System Schema" folder.
+        SystemWarehouseCatalog = 66  # DssXmlFolderNameSystemWarehouseCatalog Specifies the "System Warehouse catalog" folder.
+        SystemSystemHierarchy = 67  # DssXmlFolderNameSystemSystemHierarchy Specifies the "System Hierarchy" folder.
+        SystemDrillMap = 68  # DssXmlFolderNameSystemDrillMap Specifies the "System Drill Map" folder.
+        SystemMDSecurityFilters = 69  # DssXmlFolderNameSystemMDSecurityFilters Specifies the "System MD Security Filters" folder.
+        SystemDummyPartitionTables = 70  # DssXmlFolderNameSystemDummyPartitionTables Specifies the "System Dummy Partition Tables" folder.
+        SystemSystemPrompts = 71  # DssXmlFolderNameSystemSystemPrompts Specifies the "System Prompts" folder.
+        Events = 72  # DssXmlFolderNameEvents None
+        ConfigureDBRoles = 73  # DssXmlFolderNameConfigureDBRoles None
+        Locales = 74  # DssXmlFolderNameLocales None
+        PropertySets = 75  # DssXmlFolderNamePropertySets Specifies the folder where Property Sets are stored
+        DBMS = 76  # DssXmlFolderNameDBMS None
+        Projects = 77  # DssXmlFolderNameProjects Specifies the folder where Projects are stored
+        Users = 78  # DssXmlFolderNameUsers Specifies the folder where Users are stored
+        UserGroups = 79  # DssXmlFolderNameUserGroups Specifies the folder where User Groups are stored
+        SecurityRoles = 80  # DssXmlFolderNameSecurityRoles Specifies the folder where Security Roles are stored
+        DBConnections = 81  # DssXmlFolderNameDBConnections None
+        DBLogins = 82  # DssXmlFolderNameDBLogins None
+        Links = 83  # DssXmlFolderNameLinks Specifies the folder where Links are stored
+        ScheduleObjects = 84  # DssXmlFolderNameScheduleObjects Specifies the folder where Schedules are stored
+        ScheduleTriggers = 85  # DssXmlFolderNameScheduleTriggers Specifies the folder where Schedule Triggers are stored
+        TableSources = 86  # DssXmlFolderNameTableSources None
+        VersionUpdateHistory = 87  # DssXmlFolderNameVersionUpdateHistory Specifies the folder where the Version Update History is stored
+        Devices = 88  # DssXmlFolderNameDevices Specifies the folder where Devices are stored
+        Transmitters = 89  # DssXmlFolderNameTransmitters Specifies the folder where Transmitters are stored
+        TemplateDashboards = 90  # DssXmlFolderNameTemplateDashboards Specifies the folder where Template Dashboards are stored
+        SystemDimension = 91  # DssXmlFolderNameSystemDimension Specifies the DSS ID of the system dimension object
+        ProfileSegments = 92  # DssXmlFolderNameProfileSegments None
+        TemplateAnalysis = 93  # DssXmlFolderNameTemplateAnalysis Specifies "Analysis" folder under "Template Objects"
+        Palettes = 94  # DssXmlFolderNamePalettes Palettes folder
+        Themes = 95  # DssXmlFolderNameThemes Themes folder
+        MyDossiers = 96  # DssXmlFolderNameMyDossiers Personal Dossiers folder
+        MySharedDossiers = 97  # DssXmlFolderNameMySharedDossiers Shared Dossiers folder
+        Maximum = 98  # DssXmlFolderNameMaximum Acts as a current maximum value. This should only be used as its symbolic name, not a hardcoded enumeration value, because it may change as more folder names are added.
+        BlackListed = 1000  # DssXmlFolderNameBlackListed Special value that will allow black listed folders to be treated uniquely
 
     class FolderSortOrder(Enum):
         # https://lw.microstrategy.com/msdz/MSDL/GARelease_Current/docs/ReferenceFiles/reference/com/microstrategy/web/objects/EnumWebObjectSort.html
@@ -656,6 +750,15 @@ class TaskProc(object):
             priv_dict[priv] = value
         return priv_dict
 
+    def get_user_info(self):
+        profile_objects = self.get_folder_contents_by_guid(system_folder=TaskProc.SystemFolders.ProfileObjects)
+        profile_first_object = profile_objects[0]
+        profile_name = profile_first_object.path[-1]
+        # For example John Adams (jadams)
+        full_name, user_id = profile_name.split('(', 1)
+        user_id = user_id[:-1]
+        return full_name, user_id
+
     def get_attribute(self, attribute_id):
         """
         Returns the attribute object for the given attribute id.
@@ -742,7 +845,7 @@ class TaskProc(object):
         tries = 0
         exception = None
         while not done:
-            response = requests.get(request, cookies=self.cookies)
+            response = requests.get(request, cookies=self.cookies, verify=False)
             if self.trace:
                 self.log.debug("received response {}".format(response))
             if response.status_code != 200:
@@ -767,7 +870,9 @@ class TaskProc(object):
             if exception is None:
                 done = True
             else:
-                if tries < max_retries:
+                if 'Login failure' in exception.args[0]:
+                    raise exception
+                elif tries < max_retries:
                     self.log.debug("Request failed with error {}".format(exception))
                     time.sleep(self.retry_delay)
                     self.log.debug("Retrying. Tries={} < {} max".format(tries, max_retries))

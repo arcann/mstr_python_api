@@ -845,7 +845,7 @@ class TaskProc(object):
         tries = 0
         exception = None
         while not done:
-            response = requests.get(request, cookies=self.cookies, verify=False)
+            response = requests.get(request, cookies=self.cookies)
             if self.trace:
                 self.log.debug("received response {}".format(response))
             if response.status_code != 200:

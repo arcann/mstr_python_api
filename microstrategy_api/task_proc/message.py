@@ -7,7 +7,12 @@ from microstrategy_api.task_proc.exceptions import MstrReportException, MstrClie
 from microstrategy_api.task_proc.status import StatusIDDict, Status
 
 
-class Message(object):
+class MessageBase(object):
+    def __init__(self, status: str = None):
+        self.status = status
+
+
+class Message(MessageBase):
     """
     pollEmmaStatus to get status from message ID
     msgID =
@@ -24,12 +29,12 @@ class Message(object):
                  st: str=None,
                  status: str=None,
                  response: BeautifulSoup=None):
+        super().__init__(status=status)
         self.message_type = message_type
         self.log = logging.getLogger("{mod}.{cls}".format(mod=self.__class__.__module__, cls=self.__class__.__name__))
         self.task_api_client = task_api_client
         self.guid = guid
         # https://lw.microstrategy.com/msdz/MSDL/GARelease_Current/docs/ReferenceFiles/reference/com/microstrategy/webapi/EnumDSSXMLStatus.html
-        self.status = status
         self.st = st
         self.message = None
         if response:
@@ -70,5 +75,6 @@ class Message(object):
             response = self.task_api_client.request(arguments, max_retries=3)
             self.set_from_response(response)
         except MstrClientException as e:
+            self.log.exception(e)
             self.status = Status.ErrMsg
             self.message = e

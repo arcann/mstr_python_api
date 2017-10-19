@@ -7,6 +7,7 @@ from microstrategy_api.task_proc.exceptions import MstrReportException
 from microstrategy_api.task_proc.executable_base import ExecutableBase
 from microstrategy_api.task_proc.metric import Metric
 from microstrategy_api.task_proc.object_type import ObjectType
+from microstrategy_api.task_proc.report_execution_flags import ReportExecutionFlags
 
 
 class Value(object):
@@ -49,6 +50,7 @@ class Report(ExecutableBase):
         self.refresh_cache_argument = 'execFlags'
         self.refresh_cache_value = str(1 | 256)  # DssXmlExecutionFresh & DssXmlExecutionUpdateCache
         self.max_wait = 500
+        self.prompt_args = {'execFlags': ReportExecutionFlags.GenerateSQL}
 
     def get_headers(self):
         """

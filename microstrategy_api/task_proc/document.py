@@ -1,6 +1,11 @@
 from typing import Optional
 
+import requests
+
 import microstrategy_api
+from microstrategy_api.task_proc.doc_execution_flags import DocExecutionFlags
+from microstrategy_api.task_proc.report_execution_flags import ReportExecutionFlags
+from microstrategy_api.task_proc.exceptions import MstrDocumentException
 from microstrategy_api.task_proc.executable_base import ExecutableBase
 from microstrategy_api.task_proc.object_type import ObjectType
 
@@ -29,6 +34,7 @@ class Document(ExecutableBase):
         self.message_id_param = 'messageID'
         self.refresh_cache_argument = 'freshExec'
         self.refresh_cache_value = 'True'
+        self.prompt_args = {}  # Haven't found any that prevent document execution if no prompts.
 
     def execute(self,
                 arguments: Optional[dict] = None,
@@ -85,3 +91,127 @@ class Document(ExecutableBase):
             task_api_client=task_api_client,
         )
         return response
+
+    @staticmethod
+    def get_redirect_url(response):
+        found_title = False
+        errors = []
+        for line in response.iter_lines():
+            if not found_title:
+                if b'<title' in line:
+                    found_title = True
+                    if b'WELCOME. MicroStrategy' in line:
+                        errors.append('Got welcome page!')
+                    elif b'Login. MicroStrategy' in line:
+                        errors.append('Got login page!')
+                    elif b'Executing' not in line:
+                        return None
+            else:
+                if b'mstrAlert' in line:
+                    errors.append(line.decode('ascii'))
+                else:
+                    # HTML to scan for
+                    # submitLinkAsForm({href:'Main.aspx?evt=5005&src=Main.aspx.oivm.5005&evtOrigin=fromWait&Main.aspx=-*-yPItZp5r7IpF*-IJZgzwxqws14ic%3D.PEPFAR.*-J*_ncFB16xb7E2ZNf_&oivm=*-1.*-1.0.0.0&smartBanner=*0.2048001.1&rwb=0.BCB75A3D4E247616A91EF19F694BA7EF.Age%2BSex%2BDisaggregates*_Iframe%2B*-281*-29.*-1.0.0.1.-4D8C71F24A1E9C8A6B0094AF39A6060D.0.1.0.0.1.0.*0.0..1.*0.*-1.*0.0.4.428114243.0.100.2000.0.0.0._0.0.*0.1.0.*0.2.gb.0.0.*0&5005=1' });
+                    pos1 = line.find(b'submitLinkAsForm({href:')
+                    if pos1 != -1:
+                        pos2 = line.find(b"'", pos1 + 1)
+                        if pos2 != -1:
+                            pos3 = line.find(b"'", pos2 + 1)
+                            if pos3 != -1:
+                                return line[pos2 + 1:pos3 + 1].decode('ascii', errors='replace')
+        if errors:
+            raise MstrDocumentException('\n'.join(errors))
+        return 'ERROR'
+
+    def execute_url_api(self,
+                        arguments: Optional[dict] = None,
+                        value_prompt_answers: Optional[list] = None,
+                        element_prompt_answers: Optional[dict] = None,
+                        refresh_cache: Optional[bool] = False,
+                        task_api_client: 'microstrategy_api.task_proc.task_proc.TaskProc' = None,
+                        ) -> str:
+        """
+        See https://lw.microstrategy.com/msdz/MSDL/GARelease_Current/docs/ReferenceFiles/eventHandlerRef/web.app.beans.ServletWebComponent.html#2048001
+
+        Parameters
+        -----------
+        arguments:
+        value_prompt_answers:
+        element_prompt_answers:
+        refresh_cache:
+        task_api_client:
+
+        Returns
+        -------
+        The resulting html document
+        """
+        if task_api_client:
+            self._task_api_client = task_api_client
+
+        if not arguments:
+            arguments = dict()
+        arguments['evt'] = '2048001'
+        arguments['src'] = 'Main.aspx.2048001'
+        arguments['usrSmgr'] = self._task_api_client.session
+        # arguments['uid'] = self._task_api_client.username
+        # arguments['pwd'] = self._task_api_client.password
+        arguments['documentID'] = self.guid
+        arguments['currentViewMedia'] = '1'
+        arguments['visMode'] = '0'
+        arguments['server'] = self._task_api_client.server
+        arguments['project'] = self._task_api_client.project_name
+        arguments['Port'] = '0'
+        arguments['connmode'] = '1'
+        arguments['ru'] = '1'
+        arguments['share'] = '1'
+        arguments['maxWait'] = '5'
+        # arguments['freshExec'] = '1'  # TODO: Make an argument for this
+        arguments['promptAnswerMode'] = '2'  # 1 = default for un-answered. 2= empty for un-answered
+
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; Locust) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36"
+        }
+
+        if value_prompt_answers and element_prompt_answers:
+            arguments.update(
+                ExecutableBase._format_xml_prompts(
+                    value_prompt_answers,
+                    element_prompt_answers)
+                )
+        elif value_prompt_answers:
+            arguments.update(
+                ExecutableBase._format_value_prompts(value_prompt_answers)
+            )
+        elif element_prompt_answers:
+            arguments.update(
+                ExecutableBase._format_element_prompts(element_prompt_answers)
+            )
+        if refresh_cache:
+            arguments[self.refresh_cache_argument] = self.refresh_cache_value
+
+        main_url = self._task_api_client.base_url.replace('TaskProc', 'Main')
+        response = requests.get(main_url,
+                                params=arguments,
+                                headers=headers,
+                                cookies=self._task_api_client.cookies
+                                )
+        response.raise_for_status()
+        sub_url = Document.get_redirect_url(response)
+        if sub_url is not None:
+            base_url = self._task_api_client.base_url.replace('TaskProc.aspx', '')
+            done = False
+            while not done:
+                if sub_url == 'ERROR':
+                    raise MstrDocumentException("timedRedirect with no url found")
+                else:
+                    print("timedRedirect call")
+                    sub_url = base_url + '/MicroStrategy/asp/' + sub_url
+                    sub_response = requests.get(url=sub_url,
+                                                headers=headers,
+                                                cookies=self._task_api_client.cookies
+                                                )
+                    sub_url = Document.get_redirect_url(sub_response)
+                    if not sub_url:
+                        done = True
+
+        return response.content

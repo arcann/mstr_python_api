@@ -21,7 +21,7 @@ class ReportExecutionFlags(Enum):  # EnumDSSXMLExecutionFlags
     InboxKeepAsIs = 1024  # DssXmlExecutionInboxKeepAsIs Specifies an execution flag which instructs the inbox to keep the result "as is" in the user inbox.
     SaveToInbox = 2048  # DssXmlExecutionSaveToInbox Specifies an execution flag which instructs the inbox to save this report result to the user inbox and have the inbox keep the latest result.
     Reprompt = 4096  # DssXmlExecutionReprompt Specifies an execution flag which instructs the report server to reprompt.
-    CheckSQLPromp = 32768  # DssXmlExecutionCheckSQLPromp Instructs report server to check for prompts in SQL
+    CheckSQLPrompt = 32768  # DssXmlExecutionCheckSQLPromp Instructs report server to check for prompts in SQL
     Resolve = 65536  # DssXmlExecutionResolve Specifies an execution flag which instructs the report server to resolve the prompts in this report. Note that if this flag is set without the other flags correspoding to steps in the execution cycle, then the report will only be executed up to the point that prompts are resolved - after resolving prompts, the report execution will stop before running the SQL. This can be useful if something is to be done to the report before viewing the data.
     GenerateSQL = 131072  # DssXmlExecutionGenerateSQL This execution flag will cause execution to proceed up to the point that SQL is generated, but stop before submitting the SQL. In this case, the report results cannot be retrieved, but other operations can be performed on the report.
     Export = 262144  # DssXmlExecutionExport Specifies an execution flag which instructs the report server to execute for export results*

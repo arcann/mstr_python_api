@@ -93,9 +93,28 @@ class TaskProc(object):
                 self.login_guest()
         else:
             self._session = session_state
+        self.__messages_to_retry_list = None
 
     def __str__(self):
         return 'MstrClient session: {}'.format(self._session)
+
+    @property
+    def _messages_to_retry(self):
+        if self.__messages_to_retry_list is None:
+            regex_list = \
+                [
+                    'There are too many auditor handles at the moment. Please try again later.',
+                    'There is possible deadlock. Please try to run the report later.',
+                    'Failed to create job.',
+                    '.* Number of jobs has exceeded maximum for project .*',
+                    'Maximum number of executing jobs exceeded .*',
+                ]
+            self.__messages_to_retry_list = [re.compile(pattern) for pattern in regex_list]
+        return self.__messages_to_retry_list
+
+    @property
+    def base_url(self):
+        return self._base_url
 
     def login(self,
               server: str=None,
@@ -144,7 +163,7 @@ class TaskProc(object):
                 'pwd': self.password,
                 'rws': self.concurrent_max,
             }
-        self.log.info("logging in.")
+        self.log.debug("logging in.")
         response = self.request(arguments)
         if self.trace:
             self.log.debug("logging in returned %s" % response)
@@ -171,15 +190,6 @@ class TaskProc(object):
         if project_name:
             self.project_name = project_name
 
-        # getSessionState is used instead of login because we can set the rws parameter that way.
-        # arguments = {
-        #     'taskId':   'login',
-        #     'server':   self.server,
-        #     'project':  self.project_name,
-        #     'userid':   self.username,
-        #     'password': self.password
-        # }
-
         arguments = {
                 'taskId':   'getSessionState',
                 'server':   self.server,
@@ -187,7 +197,7 @@ class TaskProc(object):
                 'authMode':   8,
                 'rws': self.concurrent_max,
             }
-        self.log.info("logging in.")
+        self.log.debug("logging in as guest")
         response = self.request(arguments)
         if self.trace:
             self.log.debug("logging in returned %s" % response)
@@ -870,13 +880,16 @@ class TaskProc(object):
             if exception is None:
                 done = True
             else:
-                if 'Login failure' in exception.args[0]:
-                    raise exception
-                elif tries < max_retries:
-                    self.log.debug("Request failed with error {}".format(exception))
-                    time.sleep(self.retry_delay)
-                    self.log.debug("Retrying. Tries={} < {} max".format(tries, max_retries))
-                    tries += 1
+                error = exception.args[0]
+                messages_to_retry = self._messages_to_retry
+                if any(regex_pattern.match(error) for regex_pattern in messages_to_retry):
+                    if tries < max_retries:
+                        self.log.debug("Request failed with error {}".format(exception))
+                        time.sleep(self.retry_delay)
+                        self.log.debug("Retrying. Tries={} < {} max".format(tries, max_retries))
+                        tries += 1
+                    else:
+                        raise exception
                 else:
                     raise exception
 

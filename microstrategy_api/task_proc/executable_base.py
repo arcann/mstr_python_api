@@ -33,6 +33,7 @@ class ExecutableBase(MetadataObject):
         self.refresh_cache_value = None
         self.refresh_cache_argument = None
         self._prompts = None
+        self.prompt_args = {}
 
     @staticmethod
     def _get_tag_string(tag) -> Optional[str]:
@@ -202,7 +203,7 @@ class ExecutableBase(MetadataObject):
     def get_prompts(self):
         """
         Returns the prompts associated with this report. If there are
-        no prompts, this method raises an error.
+        no prompts, this method runs the report anyway!
 
         Returns:
             list: a list of Prompt objects
@@ -213,7 +214,7 @@ class ExecutableBase(MetadataObject):
         """
         if self._prompts is None:
             # Start execution to be able to get prompts
-            message = self.execute_async()
+            message = self.execute_async(arguments=self.prompt_args)
 
             while message.status not in [Status.Prompt, Status.Result]:
                 self.log.debug("get_prompts status = {}".format(message.status))

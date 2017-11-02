@@ -1,15 +1,23 @@
 import logging
 
 from bs4 import BeautifulSoup
-from typing import Optional
+from typing import Optional, Set
 
 from microstrategy_api.task_proc.exceptions import MstrReportException, MstrClientException
 from microstrategy_api.task_proc.status import StatusIDDict, Status
 
 
 class MessageBase(object):
-    def __init__(self, status: str = None):
+    def __init__(self,
+                 status: Status=None,
+                 status_str: str=None,
+                 ):
         self.status = status
+        self.status_str = status_str
+
+    def __str__(self) -> str:
+        s = "{self.status} status str={self.status_str}".format(self=self)
+        return s
 
 
 class Message(MessageBase):
@@ -27,23 +35,24 @@ class Message(MessageBase):
                  message_type: int,  # 3 for rpts or 55 for docs
                  guid: str=None,
                  st: str=None,
-                 status: str=None,
+                 status: Status = None,
+                 status_str: str=None,
                  response: BeautifulSoup=None):
-        super().__init__(status=status)
+        super().__init__(status=status,
+                         status_str=status_str,
+                         )
         self.message_type = message_type
         self.log = logging.getLogger("{mod}.{cls}".format(mod=self.__class__.__module__, cls=self.__class__.__name__))
         self.task_api_client = task_api_client
         self.guid = guid
         # https://lw.microstrategy.com/msdz/MSDL/GARelease_Current/docs/ReferenceFiles/reference/com/microstrategy/webapi/EnumDSSXMLStatus.html
         self.st = st
-        self.message = None
         if response:
             self.set_from_response(response)
 
     def __str__(self):
-        s = "{self.status} and st={self.st} for msg guid {self.guid}".format(self=self)
-        if self.message:
-            s += 'Msg= ' + str(self.message)
+        s = super().__str__()
+        s += "and st={self.st} for msg guid {self.guid}".format(self=self)
         return s
 
     def set_from_response(self, response):
@@ -54,12 +63,12 @@ class Message(MessageBase):
         else:
             self.guid = message.find('id').string
             self.st = int(message.find('st').string)
-            self.status = message.find('status').string
+            self.status_str = message.find('status').string
 
             try:
-                self.status = int(self.status)
-                if self.status in StatusIDDict:
-                    self.status = StatusIDDict[self.status]
+                status_int = int(self.status_str)
+                if status_int in StatusIDDict:
+                    self.status = StatusIDDict[status_int]
             except ValueError:
                 pass
 
@@ -77,4 +86,4 @@ class Message(MessageBase):
         except MstrClientException as e:
             self.log.exception(e)
             self.status = Status.ErrMsg
-            self.message = e
+            self.status_str = str(e)

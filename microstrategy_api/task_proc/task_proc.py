@@ -75,6 +75,7 @@ class TaskProc(object):
         self.project_name = project_name
         self.username = username
         self.password = password
+        self.__messages_to_retry_list = None
 
         if session_state is None:
             if project_source is not None:
@@ -93,7 +94,6 @@ class TaskProc(object):
                 self.login_guest()
         else:
             self._session = session_state
-        self.__messages_to_retry_list = None
 
     def __str__(self):
         return 'MstrClient session: {}'.format(self._session)

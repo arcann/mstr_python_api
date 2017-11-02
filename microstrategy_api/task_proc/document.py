@@ -129,7 +129,7 @@ class Document(ExecutableBase):
                         element_prompt_answers: Optional[dict] = None,
                         refresh_cache: Optional[bool] = False,
                         task_api_client: 'microstrategy_api.task_proc.task_proc.TaskProc' = None,
-                        ) -> str:
+                        ) -> bytes:
         """
         See https://lw.microstrategy.com/msdz/MSDL/GARelease_Current/docs/ReferenceFiles/eventHandlerRef/web.app.beans.ServletWebComponent.html#2048001
 
@@ -199,6 +199,7 @@ class Document(ExecutableBase):
         sub_url = Document.get_redirect_url(response)
         if sub_url is not None:
             base_url = self._task_api_client.base_url.replace('TaskProc.aspx', '')
+            sub_params = {'usrSmgr': self._task_api_client.session}
             done = False
             while not done:
                 if sub_url == 'ERROR':
@@ -207,6 +208,7 @@ class Document(ExecutableBase):
                     print("timedRedirect call")
                     sub_url = base_url + '/MicroStrategy/asp/' + sub_url
                     sub_response = requests.get(url=sub_url,
+                                                params=sub_params,
                                                 headers=headers,
                                                 cookies=self._task_api_client.cookies
                                                 )

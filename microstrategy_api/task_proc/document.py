@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 import requests
 
@@ -123,6 +123,69 @@ class Document(ExecutableBase):
             raise MstrDocumentException('\n'.join(errors))
         return 'ERROR'
 
+    def get_url_api_parts(
+            self,
+            arguments: Optional[dict] = None,
+            value_prompt_answers: Optional[list] = None,
+            element_prompt_answers: Optional[dict] = None,
+            refresh_cache: Optional[bool] = False,
+            ) -> Tuple[str, dict]:
+        """
+        See https://lw.microstrategy.com/msdz/MSDL/GARelease_Current/docs/ReferenceFiles/eventHandlerRef/web.app.beans.ServletWebComponent.html#2048001
+
+        Parameters
+        -----------
+        arguments:
+        value_prompt_answers:
+        element_prompt_answers:
+        refresh_cache:
+        task_api_client:
+
+        Returns
+        -------
+        The resulting html document
+        """
+        if not arguments:
+            arguments = dict()
+        arguments['evt'] = '2048001'
+        arguments['src'] = 'Main.aspx.2048001'
+        arguments['usrSmgr'] = self._task_api_client.session
+        # arguments['uid'] = self._task_api_client.username
+        # arguments['pwd'] = self._task_api_client.password
+        arguments['documentID'] = self.guid
+        arguments['currentViewMedia'] = '1'
+        arguments['visMode'] = '0'
+        arguments['server'] = self._task_api_client.server
+        arguments['project'] = self._task_api_client.project_name
+        arguments['Port'] = '0'
+        arguments['connmode'] = '1'
+        arguments['ru'] = '1'
+        arguments['share'] = '1'
+        arguments['maxWait'] = '5'
+        # arguments['freshExec'] = '1'  # TODO: Make an argument for this
+        arguments['promptAnswerMode'] = '2'  # 1 = default for un-answered. 2= empty for un-answered
+
+        if value_prompt_answers and element_prompt_answers:
+            arguments.update(
+                ExecutableBase._format_xml_prompts(
+                    value_prompt_answers,
+                    element_prompt_answers)
+                )
+        elif value_prompt_answers:
+            arguments.update(
+                ExecutableBase._format_value_prompts(value_prompt_answers)
+            )
+        elif element_prompt_answers:
+            arguments.update(
+                ExecutableBase._format_element_prompts(element_prompt_answers)
+            )
+        if refresh_cache:
+            arguments[self.refresh_cache_argument] = self.refresh_cache_value
+
+        main_url = self._task_api_client.base_url.replace('TaskProc', 'Main')
+
+        return main_url, arguments
+
     def execute_url_api(self,
                         arguments: Optional[dict] = None,
                         value_prompt_answers: Optional[list] = None,
@@ -148,48 +211,17 @@ class Document(ExecutableBase):
         if task_api_client:
             self._task_api_client = task_api_client
 
-        if not arguments:
-            arguments = dict()
-        arguments['evt'] = '2048001'
-        arguments['src'] = 'Main.aspx.2048001'
-        arguments['usrSmgr'] = self._task_api_client.session
-        # arguments['uid'] = self._task_api_client.username
-        # arguments['pwd'] = self._task_api_client.password
-        arguments['documentID'] = self.guid
-        arguments['currentViewMedia'] = '1'
-        arguments['visMode'] = '0'
-        arguments['server'] = self._task_api_client.server
-        arguments['project'] = self._task_api_client.project_name
-        arguments['Port'] = '0'
-        arguments['connmode'] = '1'
-        arguments['ru'] = '1'
-        arguments['share'] = '1'
-        arguments['maxWait'] = '5'
-        # arguments['freshExec'] = '1'  # TODO: Make an argument for this
-        arguments['promptAnswerMode'] = '2'  # 1 = default for un-answered. 2= empty for un-answered
+        main_url, arguments = self.get_url_api_parts(
+            arguments=arguments,
+            value_prompt_answers=value_prompt_answers,
+            element_prompt_answers=element_prompt_answers,
+            refresh_cache=refresh_cache,
+        )
 
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; Locust) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36"
         }
 
-        if value_prompt_answers and element_prompt_answers:
-            arguments.update(
-                ExecutableBase._format_xml_prompts(
-                    value_prompt_answers,
-                    element_prompt_answers)
-                )
-        elif value_prompt_answers:
-            arguments.update(
-                ExecutableBase._format_value_prompts(value_prompt_answers)
-            )
-        elif element_prompt_answers:
-            arguments.update(
-                ExecutableBase._format_element_prompts(element_prompt_answers)
-            )
-        if refresh_cache:
-            arguments[self.refresh_cache_argument] = self.refresh_cache_value
-
-        main_url = self._task_api_client.base_url.replace('TaskProc', 'Main')
         response = requests.get(main_url,
                                 params=arguments,
                                 headers=headers,

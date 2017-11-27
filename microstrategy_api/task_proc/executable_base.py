@@ -1,5 +1,7 @@
+from pprint import pprint
+
 from bs4 import BeautifulSoup
-from typing import Optional
+from typing import Optional, Tuple
 
 from microstrategy_api.task_proc.attribute import Attribute
 from microstrategy_api.task_proc.exceptions import MstrReportException
@@ -45,16 +47,32 @@ class ExecutableBase(MetadataObject):
     @staticmethod
     def _format_element_prompts(prompts) -> dict:
         result = ''
+        prompt_element_dict = dict()
         for prompt, values in prompts.items():
-            if result:
-                result += ","
             if values is not None:
                 if isinstance(values, str):
                     values = [values]
-                prefix = ";" + prompt.attribute.guid + ":"
-                result += prompt.attribute.guid + ";" + prompt.attribute.guid + ":" + prefix.join(values)
+
+            if prompt.attribute.guid in prompt_element_dict:
+                # check for different answer
+                if prompt_element_dict[prompt.attribute.guid] != values:
+                    pprint(prompts)
+                    raise ValueError("{} != {}".format(
+                        prompt_element_dict[prompt.attribute.guid],
+                        values
+                        )
+                    )
             else:
-                result += prompt.attribute.guid + ';'
+                prompt_element_dict[prompt.attribute.guid] = values
+
+        for attribute_guid, values in prompt_element_dict.items():
+            if result:
+                result += ","
+            if values is not None:
+                prefix = ";" + attribute_guid + ":"
+                result += attribute_guid + ";" + attribute_guid + ":" + prefix.join(values)
+            else:
+                result += attribute_guid + ';'
         return {'elementsPromptAnswers': result}
 
     @staticmethod
@@ -269,4 +287,22 @@ class ExecutableBase(MetadataObject):
                 element_prompt_answers: Optional[dict] = None,
                 refresh_cache: Optional[bool] = False,
                 ):
-        raise NotImplementedError
+        raise NotImplementedError()
+
+    def get_url_api_parts(
+            self,
+            arguments: Optional[dict] = None,
+            value_prompt_answers: Optional[list] = None,
+            element_prompt_answers: Optional[dict] = None,
+            refresh_cache: Optional[bool] = False,
+    ) -> Tuple[str, dict]:
+        raise NotImplementedError()
+
+    def execute_url_api(self,
+                        arguments: Optional[dict] = None,
+                        value_prompt_answers: Optional[list] = None,
+                        element_prompt_answers: Optional[dict] = None,
+                        refresh_cache: Optional[bool] = False,
+                        task_api_client: 'microstrategy_api.task_proc.task_proc.TaskProc' = None,
+                        ) -> bytes:
+        raise NotImplementedError()

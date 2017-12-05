@@ -24,7 +24,7 @@ class ExecutableBase(MetadataObject):
             Optional. Name of the doc/report
     """
 
-    def __init__(self, task_api_client: 'microstrategy_api.task_proc.task_prod.TaskProc', guid, name=None):
+    def __init__(self, task_api_client: 'microstrategy_api.task_proc.task_proc.TaskProc', guid, name=None):
         super().__init__(guid, name)
         self.object_type = None
         self.obect_id_param = 'objectID'
@@ -49,28 +49,35 @@ class ExecutableBase(MetadataObject):
         result = ''
         prompt_element_dict = dict()
         for prompt, values in prompts.items():
-            if values is not None:
-                if isinstance(values, str):
-                    values = [values]
+            if isinstance(prompt, Attribute):
+                prompt_element_dict = prompts
+                break
 
-            if prompt.attribute.guid in prompt_element_dict:
+            if prompt.attribute in prompt_element_dict:
                 # check for different answer
-                if prompt_element_dict[prompt.attribute.guid] != values:
+                if prompt_element_dict[prompt.attribute] != values:
                     pprint(prompts)
-                    raise ValueError("{} != {}".format(
-                        prompt_element_dict[prompt.attribute.guid],
+                    raise ValueError("Inconsistent prompt answers {} != {} see above for more details".format(
+                        prompt_element_dict[prompt.attribute],
                         values
                         )
                     )
             else:
-                prompt_element_dict[prompt.attribute.guid] = values
+                prompt_element_dict[prompt.attribute] = values
 
-        for attribute_guid, values in prompt_element_dict.items():
+        for attribute, values in prompt_element_dict.items():
+            attribute_guid = attribute.guid
             if result:
                 result += ","
             if values is not None:
-                prefix = ";" + attribute_guid + ":"
-                result += attribute_guid + ";" + attribute_guid + ":" + prefix.join(values)
+                if isinstance(values, str):
+                    values = [values]
+                # Check for a zero length list which will be the same as valus = None
+                if len(values) > 0:
+                    prefix = ";" + attribute_guid + ":"
+                    result += attribute_guid + ";" + attribute_guid + ":" + prefix.join(values)
+                else:
+                    result += attribute_guid + ';'
             else:
                 result += attribute_guid + ';'
         return {'elementsPromptAnswers': result}
@@ -92,8 +99,29 @@ class ExecutableBase(MetadataObject):
     def _format_xml_prompts(v_prompts, e_prompts) -> dict:
         result = "<rsl>"
         for p, s in v_prompts:
-            result = result + "<pa pt='5' pin='0' did='" + p.guid + \
-                     "' tp='10'>" + s + "</pa>"
+            # Value prompt has pt=5
+            result += "<pa pt='5' pin='0' did='{prompt_guid}' tp='10'>{value}</pa>".format(
+                prompt_guid=p.guid,
+                value=s,
+            )
+            # TODO: Support element prompt answers here so that we can have different answers for different attributes
+            # Although I'm not sure how often that would be useful
+            # Note: Put a text field with {&PROMPTXML} on any doc to see an examples of what this xml looks like
+            # Element prompt has pt=7 and needs sub items
+            """
+            ##  Prompt type         Prompt guid
+            <pa pt="7" pin="0" did="5C21F4D24F0312951BBE4A9DD2E6FF90" tp="10">
+                <mi>
+                    <es> 
+                        ##       Attribute guid
+                        <at did="7039371C4B5CC07DC6682D9C0EC8F45C" tp="12"/>
+                        ##             element ID (attr:ID)
+                        <e emt="1" ei="7039371C4B5CC07DC6682D9C0EC8F45C:HfVjCurKxh2" art="1" disp_n="Kenya"/>
+                        ## Additional elements go as additional <e> tags right here
+                    </es>
+                </mi>
+            </pa>
+            """
         result += "</rsl>"
         d = ExecutableBase._format_element_prompts(e_prompts)
         d['promptsAnswerXML'] = result
@@ -105,7 +133,7 @@ class ExecutableBase(MetadataObject):
             value_prompt_answers: Optional[list] = None,
             element_prompt_answers: Optional[dict] = None,
             refresh_cache: Optional[bool] = False,
-            task_api_client: 'microstrategy_api.task_proc.task_prod.TaskProc'=None,
+            task_api_client: 'microstrategy_api.task_proc.task_proc.TaskProc'=None,
             ) -> BeautifulSoup:
         """
         Execute a report/document. Returns a bs4 document.
@@ -171,7 +199,7 @@ class ExecutableBase(MetadataObject):
                       element_prompt_answers: Optional[dict] = None,
                       refresh_cache: Optional[bool] = False,
                       max_wait_secs: Optional[int] = 1,
-                      task_api_client: 'microstrategy_api.task_proc.task_prod.TaskProc' = None,
+                      task_api_client: 'microstrategy_api.task_proc.task_proc.TaskProc' = None,
                       ) -> Message:
         """
         Execute a report/document without waiting. Returns a Message.
@@ -253,26 +281,11 @@ class ExecutableBase(MetadataObject):
                 # currently supports a prompt that uses pre-created prompt objects.
                 prompts = []
                 prompt_dummy_answers = dict()
-                for prompt in response.prompts.contents:
-                    if prompt.name == 'block':
-                        attr_elem = prompt.find('orgn')
-                        attr = None
-                        if attr_elem is not None:
-                            attr = Attribute(attr_elem.find('did').string,
-                                             attr_elem.find('n').string)
-                        name = ExecutableBase._get_tag_string(prompt.find('mn'))
-                        required = ExecutableBase._get_tag_string(prompt.find('reqd'))
-                        if required == 'true':
-                            required = True
-                        else:
-                            required = False
-                        loc = prompt.find('loc')
-                        guid = None
-                        if loc:
-                            guid = ExecutableBase._get_tag_string(loc.find('did'))
-                        prompt = Prompt(guid, name, required, attribute=attr)
-                        prompt_dummy_answers[prompt] = []
-                        prompts.append(prompt)
+                for prompt_xml in response.prompts.contents:
+                    if prompt_xml.name == 'block':
+                        prompt_obj = Prompt(prompt_xml)
+                        prompt_dummy_answers[prompt_obj.attribute] = ''
+                        prompts.append(prompt_obj)
                 self.execute_async(
                     arguments={self.message_id_param: message.guid},
                     element_prompt_answers=prompt_dummy_answers
@@ -280,6 +293,14 @@ class ExecutableBase(MetadataObject):
                 self._prompts = prompts
 
         return self._prompts
+
+    def get_prompted_attributes(self):
+        attributes = set()
+        prompts = self.get_prompts()
+        for prompt in prompts:
+            if prompt.attribute not in attributes:
+                attributes.add(prompt.attribute)
+        return attributes
 
     def execute(self,
                 arguments: Optional[dict] = None,

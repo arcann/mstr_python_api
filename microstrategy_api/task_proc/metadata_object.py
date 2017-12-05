@@ -1,6 +1,7 @@
 import logging
 
 from microstrategy_api.task_proc.memoize_class import MemoizeClass
+from microstrategy_api.task_proc.object_type import ObjectType, ObjectTypeIDDict, ObjectSubType, ObjectSubTypeIDDict
 
 
 class MetadataObject(object, metaclass=MemoizeClass):
@@ -21,6 +22,8 @@ class MetadataObject(object, metaclass=MemoizeClass):
         self.log.setLevel(logging.DEBUG)
         self.guid = guid
         self.name = name
+        self._type = None
+        self._sub_type = None
         if metadata_object_type:
             self._type = metadata_object_type
         else:
@@ -34,3 +37,39 @@ class MetadataObject(object, metaclass=MemoizeClass):
             return "[{self._type}: {self.name}]".format(self=self)
         else:
             return self.__repr__()
+    @property
+    def type(self):
+        return self._type
+
+    @type.setter
+    def type(self, value):
+        if value is None:
+            self._type = value
+        elif isinstance(value, ObjectType):
+            self._type = value
+        elif isinstance(value, int):
+            self._type = ObjectTypeIDDict[value]
+        elif isinstance(value, str):
+            self._type = ObjectType[value]
+        else:
+            raise ValueError("{v} is not ObjectType, int, or str".format(v=value))
+
+    @property
+    def sub_type(self):
+        return self._sub_type
+
+    @sub_type.setter
+    def sub_type(self, value):
+        if value is None:
+            self._sub_type = value
+        elif isinstance(value, ObjectSubType):
+            self._sub_type = value
+        elif isinstance(value, int):
+            self._sub_type = ObjectSubTypeIDDict[value]
+        elif isinstance(value, str):
+            self._sub_type = ObjectSubType[value]
+        else:
+            raise ValueError("{v} is not ObjectSubType, int, or str".format(v=value))
+
+
+

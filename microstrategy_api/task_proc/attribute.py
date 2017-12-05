@@ -20,3 +20,5 @@ class Attribute(MetadataObject):
 
     def __init__(self, guid, name):
         super().__init__(guid, name, 'Attribute')
+
+

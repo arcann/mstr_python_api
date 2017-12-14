@@ -859,9 +859,9 @@ class TaskProc(object):
             if self.trace:
                 self.log.debug("received response {}".format(response))
             if response.status_code != 200:
-                exception = MstrClientException("Server response {response} given for request {request}.".format(
-                    response=response.reason,
-                    request=request)
+                exception = MstrClientException(
+                    msg="Server response {response}.".format(response=response.reason),
+                    request=request
                 )
             else:
                 self.cookies = response.cookies
@@ -871,9 +871,9 @@ class TaskProc(object):
                 self.log.error(response)
                 self.log.error(task_response)
                 error = task_response['errorMsg']
-                exception = MstrClientException("Server error '{error}' given for request {request}.".format(
-                    error=error,
-                    request=request)
+                exception = MstrClientException(
+                    msg="Server error '{error}'".format(error=error),
+                    request=request
                 )
                 if 'automatically logged out' in error:
                     # We can't re-login if we don't have a username (ie. we authenticated with a session_state value)
@@ -886,7 +886,7 @@ class TaskProc(object):
                 messages_to_retry = self._messages_to_retry
                 if any(regex_pattern.match(error) for regex_pattern in messages_to_retry):
                     if tries < max_retries:
-                        self.log.debug("Request failed with error {}".format(exception))
+                        self.log.debug("Request failed with error {}".format(repr(exception)))
                         time.sleep(self.retry_delay)
                         self.log.debug("Retrying. Tries={} < {} max".format(tries, max_retries))
                         tries += 1

@@ -443,7 +443,7 @@ class TaskProc(object):
         try:
             response = self.request(arguments)
         except MstrClientException as e:
-            if 'The folder name is unknown to the server.' in e.args[0]:
+            if 'The folder name is unknown to the server.' in e.msg:
                 raise FileNotFoundError("Folder ID {} not found".format(folder_guid))
             else:
                 raise e
@@ -882,7 +882,7 @@ class TaskProc(object):
             if exception is None:
                 done = True
             else:
-                error = exception.args[0]
+                error = exception.msg
                 messages_to_retry = self._messages_to_retry
                 if any(regex_pattern.match(error) for regex_pattern in messages_to_retry):
                     if tries < max_retries:

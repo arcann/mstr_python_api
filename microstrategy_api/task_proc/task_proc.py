@@ -876,7 +876,9 @@ class TaskProc(object):
                     request=request)
                 )
                 if 'automatically logged out' in error:
-                    self.login()
+                    # We can't re-login if we don't have a username (ie. we authenticated with a session_state value)
+                    if self.username is not None:
+                        self.login()
             if exception is None:
                 done = True
             else:
@@ -894,3 +896,32 @@ class TaskProc(object):
                     raise exception
 
         return result_bs4
+
+
+def get_task_client_from_config(config, config_section) -> TaskProc:
+    task_url = config[config_section]['task_url'].strip()
+    server = config[config_section]['server_name'].strip()
+    project = config[config_section]['project'].strip()
+    user_id = config[config_section]['user_id']
+    password = config[config_section].get('password')
+    if password is None:
+        keyring_section = config[config_section]['keyring_section'].strip()
+        try:
+            import keyring
+            password = keyring.get_password(keyring_section, user_id)
+        except ImportError:
+            raise ValueError("Password not provided and keyring not installed")
+    concurrent_max = config[config_section].get('concurrent_max', 10)
+    max_retries = config[config_section].get('max_retries', 10)
+    retry_delay = config[config_section].get('retry_delay', 10)
+
+    return TaskProc(
+        base_url=task_url,
+        server=server,
+        project_name=project,
+        username=user_id,
+        password=password,
+        concurrent_max=concurrent_max,
+        max_retries=max_retries,
+        retry_delay=retry_delay,
+    )

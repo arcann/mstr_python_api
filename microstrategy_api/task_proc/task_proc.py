@@ -891,8 +891,10 @@ class TaskProc(object):
                         self.log.debug("Retrying. Tries={} < {} max".format(tries, max_retries))
                         tries += 1
                     else:
+                        self.log.debug("Request failed with error {}".format(repr(exception)))
                         raise exception
                 else:
+                    self.log.debug("Request failed with error {}".format(repr(exception)))
                     raise exception
 
         return result_bs4

@@ -89,14 +89,15 @@ class CommandManager(object):
                                                     CommandManager.SETTING_CONNECT_PASSWORD,
                                                     fallback=None)
             if self.connect_password is None:
+                keyring_section = self.config.get(self.config_section, 'keyring_section', fallback=self.project_source)
                 try:
                     import keyring
-                    self.connect_password = keyring.get_password(self.project_source, self.connect_user_id)
+                    self.connect_password = keyring.get_password(keyring_section, self.connect_user_id)
                 except ImportError:
                     pass
                 if self.connect_password is None:
                     raise ValueError("Admin password required in parameters, config or keyring({},{})".format(
-                        self.project_source,
+                        keyring_section,
                         self.connect_user_id
                     ))
         self.cmdmgr_path = cmdmgr_path or self.config.get(self.config_section,

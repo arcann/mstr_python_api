@@ -294,7 +294,7 @@ class ExecutableBase(MetadataObject):
 
         return self._prompts
 
-    def get_prompted_attributes(self):
+    def get_prompted_attributes(self) -> set:
         attributes = set()
         prompts = self.get_prompts()
         for prompt in prompts:

@@ -879,6 +879,8 @@ class TaskProc(object):
                     # We can't re-login if we don't have a username (ie. we authenticated with a session_state value)
                     if self.username is not None:
                         self.login()
+                    else:
+                        exception.msg += '. Re-login not possible without username.'
             if exception is None:
                 done = True
             else:

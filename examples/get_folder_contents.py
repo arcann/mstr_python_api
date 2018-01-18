@@ -5,7 +5,7 @@ import keyring
 from microstrategy_api.task_proc.task_proc import TaskProc
 import logging
 
-base_url = 'https://devtest.pepfar-panorama.org/MicroStrategy/asp/TaskProc.aspx?'
+base_url = 'https://dev.pepfar-panorama.org/MicroStrategy/asp/TaskProc.aspx?'
 
 
 if __name__ == '__main__':
@@ -16,7 +16,7 @@ if __name__ == '__main__':
     # user_name = 'Administrator'
     password = keyring.get_password('Development', user_name)
     assert password
-    server = 'WIN-NTHRJ60PG84'
+    server = 'WIN-EQNJ5RHQVEV'
     project_name = 'PEPFAR'
 
     task_api_client = TaskProc(
@@ -31,7 +31,7 @@ if __name__ == '__main__':
     log.info("Calling get_folder_contents")
     # contents = task_api_client.get_folder_contents_by_guid(folder_guid=None, system_folder=TaskProc.SystemFolders.ProfileObjects)
     # contents = task_api_client.get_folder_contents_by_guid(folder_guid=None, system_folder=TaskProc.SystemFolders.UserGroups)
-    contents = task_api_client.get_folder_contents_by_guid(folder_guid=None, system_folder=TaskProc.SystemFolders.PublicReports)
+    # contents = task_api_client.get_folder_contents_by_guid(folder_guid=None, system_folder=TaskProc.SystemFolders.PublicReports)
     # contents = task_api_client.get_folder_contents(folder_id='2451540649316E411E227B9F552968CF')
     # contents = task_api_client.get_report(report_id='2451540649316E411E227B9F552968CF')
     # contents = task_api_client.get_folder_contents(
@@ -46,11 +46,11 @@ if __name__ == '__main__':
     #     type_restriction=set([2048, 768, 769, 774, 776, 14081]),
     # )
     # contents = task_api_client.get_folder_contents_by_guid("F414193240E1D8AEE80EF8BFE72A6929")
-    # contents = task_api_client.get_folder_contents(name=r"\Public Objects\Reports\Testing",
-    #                                            #type_restriction={ObjectSubType.ReportCube},
-    #                                            flatten_structure=True,
-    #                                            recursive=True,
-    #                                            )
+    contents = task_api_client.get_folder_contents(name=r"\Public Objects\Reports\Testing",
+                                                # type_restriction={ObjectSubType.ReportCube},
+                                                flatten_structure=True,
+                                                recursive=True,
+                                                )
     log.info("\n" + pformat(contents))
 
     log.info("Logging out")

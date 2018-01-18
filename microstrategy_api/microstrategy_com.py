@@ -165,7 +165,7 @@ class MicroStrategyCom(object):
         if not found:
             raise ValueError("User {} not found".format(user_id))
 
-    def reset_password(self, user_id, new_password):
+    def reset_password(self, user_id, new_password, require_new_password=False):
         user, userinfo = self.get_user_account(user_id)
         try:
             user_account_v10 = CastTo(userinfo.UserAccount, "IDSSUserAccount5")
@@ -177,6 +177,7 @@ class MicroStrategyCom(object):
                 self.log.debug("User password exp date set to {}".format(new_date))
                 user_account_v10.PasswordExpirationDate = new_date
             user_account_v10.Enabled = True
+            user_account_v10.RequiresNewPassword = require_new_password
             user_account_v10.Info.Save()
         except com_error as e:
             if e.hresult == -2147352567:
@@ -186,7 +187,6 @@ class MicroStrategyCom(object):
                 raise MicrostrategyUnexpectedError(str(e))
         except Exception as e:
             raise MicrostrategyUnexpectedError(str(e))
-
 
     def find_object_by_id(self, object_id: str, object_type: int):
         """

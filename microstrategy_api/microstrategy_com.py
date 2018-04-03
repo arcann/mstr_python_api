@@ -60,7 +60,9 @@ class MicroStrategyCom(object):
             self.log.debug('connect exception= {}'.format(e))
             if e.hresult == -2147352567:
                 message = e.excepinfo[2]
-                self.log.error('connect error message= {}'.format(message))
+                if message == '':
+                    message = str(e)
+                self.log.error('connect error message= "{}"'.format(message))
                 raise MicrostrategyConnectionError(str(message))
             else:
                 self.log.error("Unexpected result error type")

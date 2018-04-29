@@ -4,7 +4,7 @@ from microstrategy_api.task_proc.memoize_class import MemoizeClass
 from microstrategy_api.task_proc.object_type import ObjectType, ObjectTypeIDDict, ObjectSubType, ObjectSubTypeIDDict
 
 
-class MetadataObject(object, metaclass=MemoizeClass):
+class MetadataObjectNonMemo(object):
     """
     Object encapsulating a generic metadata object on MicroStrategy
 
@@ -72,4 +72,7 @@ class MetadataObject(object, metaclass=MemoizeClass):
             raise ValueError("{v} is not ObjectSubType, int, or str".format(v=value))
 
 
+class MetadataObject(MetadataObjectNonMemo, metaclass=MemoizeClass):
+    def __init__(self, guid, name, metadata_object_type=None):
+        super().__init__(guid, name, metadata_object_type)
 

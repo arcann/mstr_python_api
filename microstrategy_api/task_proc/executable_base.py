@@ -6,12 +6,12 @@ from typing import Optional, Tuple
 from microstrategy_api.task_proc.attribute import Attribute
 from microstrategy_api.task_proc.exceptions import MstrReportException
 from microstrategy_api.task_proc.message import Message
-from microstrategy_api.task_proc.metadata_object import MetadataObject
+from microstrategy_api.task_proc.metadata_object import MetadataObjectNonMemo
 from microstrategy_api.task_proc.prompt import Prompt
 from microstrategy_api.task_proc.status import Status
 
 
-class ExecutableBase(MetadataObject):
+class ExecutableBase(MetadataObjectNonMemo):
     """
     Encapsulates an executable object in MicroStrategy
 

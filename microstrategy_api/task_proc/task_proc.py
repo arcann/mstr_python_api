@@ -875,18 +875,20 @@ class TaskProc(object):
                     msg="Server error '{error}'".format(error=error),
                     request=request
                 )
+
+            if exception is None:
+                done = True
+            else:
+                error = exception.msg
+                messages_to_retry = self._messages_to_retry
                 if 'automatically logged out' in error:
                     # We can't re-login if we don't have a username (ie. we authenticated with a session_state value)
                     if self.username is not None:
                         self.login()
                     else:
                         exception.msg += '. Re-login not possible without username.'
-            if exception is None:
-                done = True
-            else:
-                error = exception.msg
-                messages_to_retry = self._messages_to_retry
-                if any(regex_pattern.match(error) for regex_pattern in messages_to_retry):
+                        raise Exception
+                elif any(regex_pattern.match(error) for regex_pattern in messages_to_retry):
                     if tries < max_retries:
                         self.log.debug("Request failed with error {}".format(repr(exception)))
                         time.sleep(self.retry_delay)

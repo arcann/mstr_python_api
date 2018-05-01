@@ -156,10 +156,10 @@ class TaskProc(object):
         # }
 
         arguments = {
-                'taskId':   'getSessionState',
-                'server':   self.server,
-                'project':  self.project_name,
-                'uid':   self.username,
+                'taskId': 'getSessionState',
+                'server': self.server,
+                'project': self.project_name,
+                'uid': self.username,
                 'pwd': self.password,
                 'rws': self.concurrent_max,
             }
@@ -882,12 +882,17 @@ class TaskProc(object):
                 error = exception.msg
                 messages_to_retry = self._messages_to_retry
                 if 'automatically logged out' in error:
-                    # We can't re-login if we don't have a username (ie. we authenticated with a session_state value)
-                    if self.username is not None:
-                        self.login()
+                    if tries < max_retries:
+                        tries += 1
+                        # We can't re-login if we don't have a username (ie. we authenticated with a session_state value)
+                        if self.username is not None:
+                            self.login()
+                        else:
+                            exception.msg += '. Re-login not possible without username.'
+                            raise exception
                     else:
-                        exception.msg += '. Re-login not possible without username.'
-                        raise Exception
+                        exception.msg += '. Tries limit {} reached'.format(tries)
+                        raise exception
                 elif any(regex_pattern.match(error) for regex_pattern in messages_to_retry):
                     if tries < max_retries:
                         self.log.debug("Request failed with error {}".format(repr(exception)))
@@ -895,7 +900,7 @@ class TaskProc(object):
                         self.log.debug("Retrying. Tries={} < {} max".format(tries, max_retries))
                         tries += 1
                     else:
-                        self.log.debug("Request failed with error {}".format(repr(exception)))
+                        exception.msg += '. Tries limit {} reached'.format(tries)
                         raise exception
                 else:
                     self.log.debug("Request failed with error {}".format(repr(exception)))

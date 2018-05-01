@@ -886,6 +886,9 @@ class TaskProc(object):
                         tries += 1
                         # We can't re-login if we don't have a username (ie. we authenticated with a session_state value)
                         if self.username is not None:
+                            self.log.info("Request failed with error {}".format(repr(exception)))
+                            time.sleep(self.retry_delay)
+                            self.log.info("Logging back in. Tries={} < {} max".format(tries, max_retries))
                             self.login()
                         else:
                             exception.msg += '. Re-login not possible without username.'
@@ -895,9 +898,9 @@ class TaskProc(object):
                         raise exception
                 elif any(regex_pattern.match(error) for regex_pattern in messages_to_retry):
                     if tries < max_retries:
-                        self.log.debug("Request failed with error {}".format(repr(exception)))
+                        self.log.info("Request failed with error {}".format(repr(exception)))
                         time.sleep(self.retry_delay)
-                        self.log.debug("Retrying. Tries={} < {} max".format(tries, max_retries))
+                        self.log.info("Retrying. Tries={} < {} max".format(tries, max_retries))
                         tries += 1
                     else:
                         exception.msg += '. Tries limit {} reached'.format(tries)

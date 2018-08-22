@@ -8,7 +8,7 @@ from enum import Enum
 import time
 from fnmatch import fnmatch
 
-from typing import Optional, List, Set
+from typing import Optional, List, Set, Union
 
 import requests
 import logging
@@ -488,7 +488,7 @@ class TaskProc(object):
         return result
 
     @staticmethod
-    def path_parts(path):
+    def path_parts(path) -> List[str]:
         # MSTR Paths should use \ separators, however, if the paths starts with / we'll try and use that
         if len(path) == 0:
             return []
@@ -498,7 +498,7 @@ class TaskProc(object):
             return re.split('[\\\]', path)
 
     def get_folder_contents_by_name(self,
-                                    name,
+                                    name: Union[str, List[str]],
                                     type_restriction: Optional[set] = None,
                                     sort_key: Optional[FolderSortOrder] = None,
                                     sort_ascending: Optional[bool] = True,
@@ -557,7 +557,7 @@ class TaskProc(object):
         return folder_contents
 
     def get_folder_contents(self,
-                            name: str,
+                            name: Union[str, List[str]],
                             type_restriction: Optional[set] = None,
                             sort_key: Optional[FolderSortOrder] = None,
                             sort_ascending: Optional[bool] = True,
@@ -625,7 +625,7 @@ class TaskProc(object):
         name_parts = TaskProc.path_parts(name)
         folder_name = '/'.join(name_parts[:-1])
         object_name = name_parts[-1]
-        folder_contents = self.get_folder_contents(folder_name, type_restriction=type_restriction, name_patterns_to_include=object_name)
+        folder_contents = self.get_folder_contents(folder_name, type_restriction=type_restriction, name_patterns_to_include=[object_name])
         if len(folder_contents) == 0:
             raise FileNotFoundError("Folder {} does not contain {} (that matches type {})".format(
                 folder_name, object_name, type_restriction
@@ -687,7 +687,7 @@ class TaskProc(object):
                 path_parts = self.path_parts(path)
                 contents = self.get_folder_contents(
                     name=path_parts[:-1],
-                    name_patterns_to_include=path_parts[-1],
+                    name_patterns_to_include=[path_parts[-1]],
                     recursive=False,
                     flatten_structure=True,
                     type_restriction=type_restriction,
@@ -855,46 +855,64 @@ class TaskProc(object):
         tries = 0
         exception = None
         while not done:
-            response = requests.get(request, cookies=self.cookies)
-            if self.trace:
-                self.log.debug("received response {}".format(response))
-            if response.status_code != 200:
-                exception = MstrClientException(
-                    msg="Server response {response}.".format(response=response.reason),
-                    request=request
-                )
-            else:
-                self.cookies = response.cookies
-            result_bs4 = BeautifulSoup(response.text, 'xml')
-            task_response = result_bs4.find('taskResponse')
-            if task_response['statusCode'] in ['400', '500']:
-                self.log.error(response)
-                self.log.error(task_response)
-                error = task_response['errorMsg']
-                exception = MstrClientException(
-                    msg="Server error '{error}'".format(error=error),
-                    request=request
-                )
+            try:
+                response = requests.get(request, cookies=self.cookies)
+                if self.trace:
+                    self.log.debug("received response {}".format(response))
+                if response.status_code != 200:
+                    exception = MstrClientException(
+                        msg="Server response {response}.".format(response=response.reason),
+                        request=request
+                    )
+                else:
+                    self.cookies = response.cookies
+                result_bs4 = BeautifulSoup(response.text, 'xml')
+                task_response = result_bs4.find('taskResponse')
+                if task_response['statusCode'] in ['400', '500']:
+                    self.log.error(response)
+                    self.log.error(task_response)
+                    error = task_response['errorMsg']
+                    exception = MstrClientException(
+                        msg="Server error '{error}'".format(error=error),
+                        request=request
+                    )
+            except requests.packages.urllib3.exceptions.NewConnectionError as e:
+                exception = e
 
             if exception is None:
                 done = True
             else:
                 error = exception.msg
                 messages_to_retry = self._messages_to_retry
-                if 'automatically logged out' in error:
+                time.sleep(1)
+                if isinstance(exception, requests.packages.urllib3.exceptions.NewConnectionError):
+                    if tries < max_retries:
+                        self.log.info("Request failed with error {}".format(repr(exception)))
+                        time.sleep(self.retry_delay)
+                        self.log.info("Retrying. Tries={} < {} max".format(tries, max_retries))
+                        # Count these as 1/1000 of a try (allows 5 minutes of retries) for each max_retries
+                        tries += (1/300)
+                    else:
+                        self.log.error('. Tries limit {} reached'.format(tries))
+                        raise exception
+                elif 'automatically logged out' in error:
                     if tries < max_retries:
                         tries += 1
                         # We can't re-login if we don't have a username (ie. we authenticated with a session_state value)
                         if self.username is not None:
                             self.log.info("Request failed with error {}".format(repr(exception)))
                             time.sleep(self.retry_delay)
-                            self.log.info("Logging back in. Tries={} < {} max".format(tries, max_retries))
+                            self.log.info("Logging back in. Tries= {} < {} max".format(tries, max_retries))
+                            try:
+                                self.logout()
+                            except MstrClientException:
+                                pass
                             self.login()
                         else:
                             exception.msg += '. Re-login not possible without username.'
                             raise exception
                     else:
-                        exception.msg += '. Tries limit {} reached'.format(tries)
+                        self.log.error('. Tries limit {} reached'.format(tries))
                         raise exception
                 elif any(regex_pattern.match(error) for regex_pattern in messages_to_retry):
                     if tries < max_retries:
@@ -903,7 +921,7 @@ class TaskProc(object):
                         self.log.info("Retrying. Tries={} < {} max".format(tries, max_retries))
                         tries += 1
                     else:
-                        exception.msg += '. Tries limit {} reached'.format(tries)
+                        self.log.error('. Tries limit {} reached'.format(tries))
                         raise exception
                 else:
                     self.log.debug("Request failed with error {}".format(repr(exception)))

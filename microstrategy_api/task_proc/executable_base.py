@@ -53,6 +53,9 @@ class ExecutableBase(MetadataObjectNonMemo):
                 prompt_element_dict = prompts
                 break
 
+            if prompt is None:
+                break
+
             if prompt.attribute in prompt_element_dict:
                 # check for different answer
                 if prompt_element_dict[prompt.attribute] != values:

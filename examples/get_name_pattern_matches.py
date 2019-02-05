@@ -7,16 +7,16 @@ from microstrategy_api.task_proc.object_type import ObjectSubType
 import logging
 
 
-base_url = 'https://devtest.pepfar-panorama.org/MicroStrategy/asp/TaskProc.aspx?'
+base_url = 'https://dev.pepfar-panorama.org/MicroStrategy/asp/TaskProc.aspx?'
 
 
 if __name__ == '__main__':
     logging.basicConfig()
     log = logging.getLogger(__name__)
     log.setLevel(logging.DEBUG)
-    user_name = 'PEPFAR'
+    user_name = 'system_user'
     password = keyring.get_password('Development', user_name)
-    server = 'WIN-NTHRJ60PG84'
+    server = 'WIN-EQNJ5RHQVEV'
     project_name = 'PEPFAR'
 
     task_api_client = TaskProc(
@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
     log.info("Calling get_folder_contents")
     contents = task_api_client.get_matching_objects_list(
-        path_list=['\Public Objects\Reports\POART\I-frames\*global*[r]'],
+        path_list=['\Public Objects\Reports\Spotlight\[r]'],
         # path_list=['\Public Objects\Reports\POART\I-frames\[r]'],
         type_restriction={ObjectSubType.DocumentDefinition, ObjectSubType.ReportWritingDocument},
     )

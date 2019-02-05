@@ -551,7 +551,11 @@ class TaskProc(object):
                         else:
                             new_folder_contents = sub_folder
                 if not found:
-                    raise FileNotFoundError("{} not found when processing path {} {}".format(folder_name, name, name_parts))
+                    if isinstance(name, str):
+                        msg = f'"{folder_name}" not found when processing path {name}\nParts={name_parts}'
+                    else:
+                        msg = f'"{folder_name}" not found when processing path {name}'
+                    raise FileNotFoundError(msg)
                 else:
                     folder_contents = new_folder_contents
         return folder_contents
@@ -637,7 +641,7 @@ class TaskProc(object):
         else:
             return folder_contents[0]
 
-    def get_matching_objects_list(self, path_list: list, type_restriction: set) -> List[FolderObject]:
+    def get_matching_objects_list(self, path_list: list, type_restriction: set, error_list=None) -> List[FolderObject]:
         """
         Get a list of matching FolderObjects based on a list of object name patterns.
         Patterns accept wildcards:
@@ -651,6 +655,8 @@ class TaskProc(object):
             A list of path patterns
         type_restriction:
             A set of ObjectSubType values to allow.
+        error_list:
+            Option list to return path errors (FileNotFoundError) in. If not passed, then errors are raised.
 
 
         Returns
@@ -661,40 +667,51 @@ class TaskProc(object):
             path_list = [path_list]
         result_list = list()
         for path in path_list:
-            if path == '':
-                pass
-            elif path[-3:].lower() == '[r]':
-                # Ends in [r] so recursive search is needed
-                path_parts = self.path_parts(path)
-                folder = path_parts[:-1]
-                file_name = path_parts[-1][:-3]
-                if file_name == '':
-                    file_name_list = None
+            path = path.strip()
+            try:
+                if path == '':
+                    pass
+                elif path[-3:].lower() == '[r]':
+                    # Ends in [r] so recursive search is needed
+                    path_parts = self.path_parts(path)
+                    folder = path_parts[:-1]
+                    file_name = path_parts[-1][:-3]
+                    if file_name == '':
+                        file_name_list = None
+                    else:
+                        file_name_list = [file_name]
+                    contents = self.get_folder_contents(
+                        name=folder,
+                        name_patterns_to_include=file_name_list,
+                        recursive=True,
+                        flatten_structure=True,
+                        type_restriction=type_restriction,
+                    )
+                    if len(contents) == 0:
+                        msg = f"Path pattern {path} returned no matches"
+                        if error_list is not None:
+                            error_list.append(msg)
+                        else:
+                            self.log.warning(msg)
+                    result_list.extend(contents)
                 else:
-                    file_name_list = [file_name]
-                contents = self.get_folder_contents(
-                    name=folder,
-                    name_patterns_to_include=file_name_list,
-                    recursive=True,
-                    flatten_structure=True,
-                    type_restriction=type_restriction,
-                )
-                if len(contents) == 0:
-                    self.log.warning("Path pattern {} returned no matches".format(path))
-                result_list.extend(contents)
-            else:
-                # Non recursive pass last part as name_patterns_to_include
-                path_parts = self.path_parts(path)
-                contents = self.get_folder_contents(
-                    name=path_parts[:-1],
-                    name_patterns_to_include=[path_parts[-1]],
-                    recursive=False,
-                    flatten_structure=True,
-                    type_restriction=type_restriction,
-                )
-                if len(contents) == 0:
-                    self.log.warning("Path pattern {} returned no matches".format(path))
-                result_list.extend(contents)
+                    # Non recursive pass last part as name_patterns_to_include
+                    path_parts = self.path_parts(path)
+                    contents = self.get_folder_contents(
+                        name=path_parts[:-1],
+                        name_patterns_to_include=[path_parts[-1]],
+                        recursive=False,
+                        flatten_structure=True,
+                        type_restriction=type_restriction,
+                    )
+                    if len(contents) == 0:
+                        self.log.warning("Path pattern {} returned no matches".format(path))
+                    result_list.extend(contents)
+            except FileNotFoundError as e:
+                if error_list is None:
+                    raise e
+                else:
+                    error_list.append(f'{path} yields {e}')
         return result_list
 
     def get_executable_object(self, folder_obj: FolderObject) -> ExecutableBase:

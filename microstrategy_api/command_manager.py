@@ -287,9 +287,19 @@ class CommandManager(object):
         script = "TRIGGER EVENT '{event_name}';"
         self.execute_with_substitutions(script, event_name=event_name)
 
-    def purge_project_caches(self, project_name: str):
-        script = "PURGE ALL CACHING IN PROJECT '{project_name}';"
-        self.execute_with_substitutions(script, project_name=project_name)
+    def purge_project_caches(self, project_name: str, cache_type: str = None):
+        if cache_type is None:
+            cache_type = 'ALL'
+        script = "PURGE {cache_type} CACHING IN PROJECT '{project_name}';"
+        self.execute_with_substitutions(script, project_name=project_name, cache_type=cache_type)
+
+    def invalidate_project_dbconnection_caches(self, project_name: str, connection: str):
+        script = 'INVALIDATE REPORT CACHES DBCONNECTION NAME "{connection}" IN PROJECT "{project_name}";'
+        self.execute_with_substitutions(script, project_name=project_name, connection=connection)
+
+    def invalidate_project_table_caches(self, project_name: str, table: str):
+        script = 'INVALIDATE REPORT CACHES WHTABLE "{table}" IN PROJECT "{project_name}";'
+        self.execute_with_substitutions(script, project_name=project_name, table=table)
 
     def find_running_jobs(self, user=None, project=None):
         script = 'LIST JOBS'

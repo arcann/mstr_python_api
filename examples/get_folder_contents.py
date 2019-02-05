@@ -46,11 +46,12 @@ if __name__ == '__main__':
     #     type_restriction=set([2048, 768, 769, 774, 776, 14081]),
     # )
     # contents = task_api_client.get_folder_contents_by_guid("F414193240E1D8AEE80EF8BFE72A6929")
-    contents = task_api_client.get_folder_contents(name=r"\Public Objects\Reports\Testing",
-                                                # type_restriction={ObjectSubType.ReportCube},
-                                                flatten_structure=True,
-                                                recursive=True,
-                                                )
+    contents = task_api_client.get_folder_contents(
+        name=r"\Public Objects\Reports\Testing",
+        # type_restriction={ObjectSubType.ReportCube},
+        flatten_structure=True,
+        recursive=True,
+        )
     log.info("\n" + pformat(contents))
 
     log.info("Logging out")

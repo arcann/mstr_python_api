@@ -157,64 +157,69 @@ class CommandManager(object):
                     self.log.debug("{}".format(cmd))
                     self.log.debug("run_command: Executing command manager")
                 try:
-                    subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+                    output_str = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
                     if return_output:
                         output = list()
-                        with open(output_file_name, 'rt') as output_file:
-                            passed_header = False
-                            results_done = False
-                            first_header = None
-                            nested_list = None
-                            first_nested_header = None
-                            row = dict()
-                            nested_row = dict()
-                            for line in output_file.readlines():
-                                line = line.rstrip()
-                                if self.output_logging_level != logging.NOTSET:
-                                    self.log.log(self.output_logging_level,
-                                                 "L:{}".format(line)
-                                                 )
-                                if not passed_header:
-                                    if 'Syntax checking has been completed' in line:
-                                        passed_header = True
-                                elif 'No results returned' in line:
-                                    results_done = True
-                                elif 'Successfully disconnected' in line:
-                                    results_done = True
-                                elif line[:3] == '===':
-                                    results_done = True
-                                elif not results_done:
-                                    row_tuple = line.split('=')
-                                    if len(row_tuple) == 2:
-                                        header, value = row_tuple
-                                        header = header.strip()
-                                        value = value.strip()
-                                        # Check if nested content
-                                        if line[0] != ' ':
-                                            if first_header is None:
-                                                first_header = header
-                                            elif header == first_header:
-                                                output.append(row)
-                                                row = dict()
-                                            row[header] = value
-                                        else:  # Is nested
-                                            if first_nested_header is None:
-                                                first_nested_header = header
-                                            elif header == first_nested_header:
-                                                nested_list.append(nested_row)
-                                                nested_row = dict()
-                                            nested_row[header] = value
-                                    else:
-                                        # Nested list
-                                        nested_list = list()
-                                        row[row_tuple[0]] = nested_list
-                                        nested_row = dict()
-                            if len(row) > 0:
-                                output.append(row)
-                        return output
+                        try:
+                            with open(output_file_name, 'rt') as output_file:
+                                passed_header = False
+                                results_done = False
+                                first_header = None
+                                nested_list = None
+                                first_nested_header = None
+                                row = dict()
+                                nested_row = dict()
+                                for line in output_file.readlines():
+                                    line = line.rstrip()
+                                    if self.output_logging_level != logging.NOTSET:
+                                        self.log.log(self.output_logging_level,
+                                                     "L:{}".format(line)
+                                                     )
+                                    if not passed_header:
+                                        if 'Syntax checking has been completed' in line:
+                                            passed_header = True
+                                    elif 'No results returned' in line:
+                                        results_done = True
+                                    elif 'Successfully disconnected' in line:
+                                        results_done = True
+                                    elif line[:3] == '===':
+                                        results_done = True
+                                    elif not results_done:
+                                        row_tuple = line.split('=')
+                                        if len(row_tuple) == 2:
+                                            header, value = row_tuple
+                                            header = header.strip()
+                                            value = value.strip()
+                                            # Check if nested content
+                                            if line[0] != ' ':
+                                                if first_header is None:
+                                                    first_header = header
+                                                elif header == first_header:
+                                                    output.append(row)
+                                                    row = dict()
+                                                row[header] = value
+                                            else:  # Is nested
+                                                if first_nested_header is None:
+                                                    first_nested_header = header
+                                                elif header == first_nested_header:
+                                                    nested_list.append(nested_row)
+                                                    nested_row = dict()
+                                                nested_row[header] = value
+                                        else:
+                                            # Nested list
+                                            nested_list = list()
+                                            row[row_tuple[0]] = nested_list
+                                            nested_row = dict()
+                                if len(row) > 0:
+                                    output.append(row)
+                            return output
+                        except FileNotFoundError:
+                            self.log.error(f'{cmd} did not produce the expected output file')
+                            self.log.error(output_str)
+                            raise
                 except subprocess.CalledProcessError as e:
-                    errors = "Error code " + str(e.returncode) + '\n'
-                    errors += ("From " + ' '.join(e.cmd)) + '\n'
+                    errors = f"Error code {e.returncode}\n"
+                    errors += "From " + (' '.join(e.cmd)).replace(self.connect_password, '********') + '\n'
                     errors += script_str + '\n'
                     if e.output:
                         if self.error_logging_level != logging.NOTSET:
@@ -226,19 +231,22 @@ class CommandManager(object):
                         errors += e.stderr.decode('ascii')
                     if 'You do not have' in errors and 'privilege' in errors:
                         errors = 'System privilege error'
-                    with open(output_file_name, 'rt') as output_file:
-                        passed_header = False
-                        for line in output_file.readlines():
-                            if self.error_logging_level != logging.NOTSET:
-                                self.log.log(self.error_logging_level, "Error Out2:{}".format(line))
-                            if not passed_header:
-                                if 'Syntax checking has been completed' in line:
-                                    passed_header = True
-                            else:
-                                if 'No results returned' in line:
-                                    break
+                    try:
+                        with open(output_file_name, 'rt') as output_file:
+                            passed_header = False
+                            for line in output_file.readlines():
+                                if self.error_logging_level != logging.NOTSET:
+                                    self.log.log(self.error_logging_level, "Error Out2:{}".format(line))
+                                if not passed_header:
+                                    if 'Syntax checking has been completed' in line:
+                                        passed_header = True
                                 else:
-                                    errors += line
+                                    if 'No results returned' in line:
+                                        break
+                                    else:
+                                        errors += line
+                    except FileNotFoundError:
+                        errors += f'Command Manager did not produce the expected output file. Error code {e.returncode} is the only available information.\n'
                         raise CommandManagerException(errors)
 
     def execute_with_substitutions(self,

@@ -107,11 +107,7 @@ class CommandManager(object):
         self.error_logging_level = error_logging_level
 
     def should_run_via_cmd(self):
-        cfg = self.config.get(self.config_section, 'run_via_cmd', fallback='N')
-        if cfg.upper()[0] == 'Y':
-            return True
-        else:
-            return False
+        return self.config.getboolean(self.config_section, 'run_via_cmd', fallback='False')
 
     def execute(self,
                 script_str: str,
@@ -157,7 +153,7 @@ class CommandManager(object):
                     self.log.debug("{}".format(cmd))
                     self.log.debug("run_command: Executing command manager")
                 try:
-                    output_str = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+                    subprocess.check_output(cmd, stderr=subprocess.STDOUT)
                     if return_output:
                         output = list()
                         try:
@@ -215,7 +211,6 @@ class CommandManager(object):
                             return output
                         except FileNotFoundError:
                             self.log.error(f'{cmd} did not produce the expected output file')
-                            self.log.error(output_str)
                             raise
                 except subprocess.CalledProcessError as e:
                     errors = f"Error code {e.returncode}\n"
@@ -245,8 +240,8 @@ class CommandManager(object):
                                         break
                                     else:
                                         errors += line
-                    except FileNotFoundError:
-                        errors += f'Command Manager did not produce the expected output file. Error code {e.returncode} is the only available information.\n'
+                    except FileNotFoundError as fnf:
+                        errors += f'Command Manager did not produce the expected output file. Error code {e.returncode} is the only available information. {fnf}\n'
                         raise CommandManagerException(errors)
 
     def execute_with_substitutions(self,

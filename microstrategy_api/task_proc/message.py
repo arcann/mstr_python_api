@@ -72,7 +72,7 @@ class Message(MessageBase):
             except ValueError:
                 pass
 
-    def update_status(self, max_wait_ms: Optional[int]=None):
+    def update_status(self, max_wait_ms: Optional[int] = None):
         arguments = {'taskId':    'pollEmmaStatus',
                      'msgID':     self.guid,
                      'resultSetType': self.message_type,

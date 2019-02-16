@@ -268,6 +268,8 @@ class ExecutableBase(MetadataObjectNonMemo):
             while message.status not in [Status.Prompt, Status.Result]:
                 self.log.debug("get_prompts status = {}".format(message.status))
                 message.update_status(max_wait_ms=1000)
+                if message.status == Status.ErrMsg:
+                    raise MstrReportException(message.status_str)
 
             if message.status == Status.Result:
                 return []

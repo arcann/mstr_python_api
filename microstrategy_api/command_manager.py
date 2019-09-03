@@ -106,8 +106,16 @@ class CommandManager(object):
         self.output_logging_level = output_logging_level
         self.error_logging_level = error_logging_level
 
+    def __str__(self):
+        msg = (f"CommandManager(project_source='{self.project_source}', "
+               f"connect_user_id = '{self.connect_user_id}', "
+               f"connect_password = '{self.connect_password[:2]}********' "
+               f"cmdmgr_path = {self.cmdmgr_path}'"
+               )
+        return msg
+
     def should_run_via_cmd(self):
-        return self.config.getboolean(self.config_section, 'run_via_cmd', fallback='False')
+        return self.config.getboolean(self.config_section, 'run_via_cmd', fallback=False)
 
     def execute(self,
                 script_str: str,
@@ -242,7 +250,7 @@ class CommandManager(object):
                                         errors += line
                     except FileNotFoundError as fnf:
                         errors += f'Command Manager did not produce the expected output file. Error code {e.returncode} is the only available information. {fnf}\n'
-                        raise CommandManagerException(errors)
+                    raise CommandManagerException(errors)
 
     def execute_with_substitutions(self,
                                    template,

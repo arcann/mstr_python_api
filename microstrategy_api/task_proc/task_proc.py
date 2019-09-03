@@ -61,7 +61,6 @@ class TaskProc(object):
             The name of the MicroStrategy project to connect to.
         """
         self.log = logging.getLogger("{mod}.{cls}".format(mod=self.__class__.__module__, cls=self.__class__.__name__))
-        self.log.setLevel(logging.DEBUG)
         if 'TaskProc' in base_url:
             if base_url[-1] != '?':
                 base_url += '?'
@@ -875,24 +874,42 @@ class TaskProc(object):
             try:
                 response = requests.get(request, cookies=self.cookies)
                 if self.trace:
-                    self.log.debug("received response {}".format(response))
+                    self.log.debug(f"received response {response}")
                 if response.status_code != 200:
                     exception = MstrClientException(
-                        msg="Server response {response}.".format(response=response.reason),
+                        msg=f"Server response {response}.",
                         request=request
                     )
                 else:
                     self.cookies = response.cookies
                 result_bs4 = BeautifulSoup(response.text, 'xml')
                 task_response = result_bs4.find('taskResponse')
-                if task_response['statusCode'] in ['400', '500']:
+                if task_response is None:
                     self.log.error(response)
                     self.log.error(task_response)
-                    error = task_response['errorMsg']
+                    error = f"Unexpected server response with no taskResponse tag {response}"
                     exception = MstrClientException(
-                        msg="Server error '{error}'".format(error=error),
+                        msg=f"Server error '{error}'",
                         request=request
                     )
+                else:
+                    if task_response.attrs is None or 'statusCode' not in task_response.attrs:
+                        self.log.error(response)
+                        self.log.error(task_response)
+                        error = f"Unexpected server response with no statusCode in taskResponse tag {task_response}"
+                        exception = MstrClientException(
+                            msg=f"Server error '{error}'",
+                            request=request
+                        )
+                    else:
+                        if task_response['statusCode'] in ['400', '500']:
+                            self.log.error(response)
+                            self.log.error(task_response)
+                            error = task_response['errorMsg']
+                            exception = MstrClientException(
+                                msg=f"Server error '{error}'",
+                                request=request
+                            )
             except requests.packages.urllib3.exceptions.NewConnectionError as e:
                 exception = e
 

@@ -814,12 +814,15 @@ class TaskProc(object):
             'sessionState': self._session,
         }
         arguments.update(BASE_PARAMS)
-        result = self.request(arguments)
+        try:
+            result = self.request(arguments, max_retries=0)
+        except Exception as e:
+            result = str(e)
         self._session = None
         if self.trace:
             self.log.debug("logging out returned %s" % result)
 
-    def request(self, arguments: dict, max_retries: int=None) -> BeautifulSoup:
+    def request(self, arguments: dict, max_retries: int = None) -> BeautifulSoup:
         """
         Assembles the url and performs a get request to
         the MicroStrategy Task Service API

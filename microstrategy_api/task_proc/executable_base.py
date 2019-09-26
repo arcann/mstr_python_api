@@ -1,5 +1,9 @@
+# https://www.python.org/dev/peps/pep-0563/
+from __future__ import annotations
+
 from pprint import pprint
 
+import typing
 from bs4 import BeautifulSoup
 from typing import Optional, Tuple
 
@@ -9,6 +13,9 @@ from microstrategy_api.task_proc.message import Message
 from microstrategy_api.task_proc.metadata_object import MetadataObjectNonMemo
 from microstrategy_api.task_proc.prompt import Prompt
 from microstrategy_api.task_proc.status import Status
+
+if typing.TYPE_CHECKING:
+    import microstrategy_api
 
 
 class ExecutableBase(MetadataObjectNonMemo):
@@ -24,7 +31,7 @@ class ExecutableBase(MetadataObjectNonMemo):
             Optional. Name of the doc/report
     """
 
-    def __init__(self, task_api_client: 'microstrategy_api.task_proc.task_proc.TaskProc', guid, name=None):
+    def __init__(self, task_api_client: microstrategy_api.task_proc.task_proc.TaskProc, guid, name=None):
         super().__init__(guid, name)
         self.object_type = None
         self.obect_id_param = 'objectID'
@@ -136,7 +143,7 @@ class ExecutableBase(MetadataObjectNonMemo):
             value_prompt_answers: Optional[list] = None,
             element_prompt_answers: Optional[dict] = None,
             refresh_cache: Optional[bool] = False,
-            task_api_client: 'microstrategy_api.task_proc.task_proc.TaskProc'=None,
+            task_api_client: 'microstrategy_api.task_proc.task_proc.TaskProc' = None,
             ) -> BeautifulSoup:
         """
         Execute a report/document. Returns a bs4 document.
@@ -321,6 +328,7 @@ class ExecutableBase(MetadataObjectNonMemo):
             value_prompt_answers: Optional[list] = None,
             element_prompt_answers: Optional[dict] = None,
             refresh_cache: Optional[bool] = False,
+            is_dossier: Optional[bool] = False,
     ) -> Tuple[str, dict]:
         raise NotImplementedError()
 

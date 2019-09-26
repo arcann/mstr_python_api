@@ -3,8 +3,6 @@ from typing import Optional, Tuple
 import requests
 
 import microstrategy_api
-from microstrategy_api.task_proc.doc_execution_flags import DocExecutionFlags
-from microstrategy_api.task_proc.report_execution_flags import ReportExecutionFlags
 from microstrategy_api.task_proc.exceptions import MstrDocumentException
 from microstrategy_api.task_proc.executable_base import ExecutableBase
 from microstrategy_api.task_proc.object_type import ObjectType
@@ -129,6 +127,7 @@ class Document(ExecutableBase):
             value_prompt_answers: Optional[list] = None,
             element_prompt_answers: Optional[dict] = None,
             refresh_cache: Optional[bool] = False,
+            is_dossier: Optional[bool] = False,
             ) -> Tuple[str, dict]:
         """
         See https://lw.microstrategy.com/msdz/MSDL/GARelease_Current/docs/ReferenceFiles/eventHandlerRef/web.app.beans.ServletWebComponent.html#2048001
@@ -140,6 +139,7 @@ class Document(ExecutableBase):
         element_prompt_answers:
         refresh_cache:
         task_api_client:
+        is_dossier:
 
         Returns
         -------
@@ -147,23 +147,27 @@ class Document(ExecutableBase):
         """
         if not arguments:
             arguments = dict()
-        arguments['evt'] = '2048001'
-        arguments['src'] = 'Main.aspx.2048001'
+
+        if is_dossier:
+            arguments['evt'] = '3140'
+            arguments['src'] = 'Main.aspx.3140'
+        else:
+            arguments['evt'] = '2048001'
+            arguments['src'] = 'Main.aspx.2048001'
+            arguments['currentViewMedia'] = '1'
+            arguments['visMode'] = '0'
+
         arguments['usrSmgr'] = self._task_api_client.session
         # arguments['uid'] = self._task_api_client.username
         # arguments['pwd'] = self._task_api_client.password
         arguments['documentID'] = self.guid
-        arguments['currentViewMedia'] = '1'
-        arguments['visMode'] = '0'
         arguments['server'] = self._task_api_client.server
         arguments['project'] = self._task_api_client.project_name
         arguments['Port'] = '0'
         arguments['connmode'] = '1'
         arguments['ru'] = '1'
         arguments['share'] = '1'
-        arguments['maxWait'] = '5'
-        # arguments['freshExec'] = '1'  # TODO: Make an argument for this
-        arguments['promptAnswerMode'] = '2'  # 1 = default for un-answered. 2= empty for un-answered
+        arguments['promptAnswerMode'] = '1'  # 1 = default for un-answered. 2= empty for un-answered
 
         if value_prompt_answers and element_prompt_answers:
             arguments.update(
@@ -192,6 +196,7 @@ class Document(ExecutableBase):
                         element_prompt_answers: Optional[dict] = None,
                         refresh_cache: Optional[bool] = False,
                         task_api_client: 'microstrategy_api.task_proc.task_proc.TaskProc' = None,
+                        is_dossier: Optional[bool] = False,
                         ) -> bytes:
         """
         See https://lw.microstrategy.com/msdz/MSDL/GARelease_Current/docs/ReferenceFiles/eventHandlerRef/web.app.beans.ServletWebComponent.html#2048001
@@ -216,6 +221,7 @@ class Document(ExecutableBase):
             value_prompt_answers=value_prompt_answers,
             element_prompt_answers=element_prompt_answers,
             refresh_cache=refresh_cache,
+            is_dossier=is_dossier,
         )
 
         headers = {

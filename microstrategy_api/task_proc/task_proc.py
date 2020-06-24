@@ -890,7 +890,7 @@ class TaskProc(object):
                 if task_response is None:
                     self.log.error(response)
                     self.log.error(task_response)
-                    error = f"Unexpected server response with no taskResponse tag {response}"
+                    error = f"Unexpected server response with no taskResponse tag {result_bs4.prettify()}"
                     exception = MstrClientException(
                         msg=f"Server error '{error}'",
                         request=request

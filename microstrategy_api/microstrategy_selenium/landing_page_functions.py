@@ -6,12 +6,12 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
-BASE_URL = "https://dev.pepfar-panorama.org/"
-PEPFAR_LANDING = "PEPFARLanding/"
+BASE_URL = "https://my_hostname/"
+LANDING = "Landing/"
 
 
 def login_pano(driver, username, password, timeout=30):
-    driver.get(BASE_URL+PEPFAR_LANDING+'#login')
+    driver.get(BASE_URL + LANDING + '#login')
     wait = WebDriverWait(driver, timeout)
     short_wait = WebDriverWait(driver, 2)
     # //*[@id=\"GovtBanner\"]/div/div/div
@@ -30,7 +30,7 @@ def login_pano(driver, username, password, timeout=30):
     password_field.send_keys(password)
     driver.find_element_by_xpath("//*[@id=\"loginSubmit\"]").click()
     try:
-        wait.until(EC.visibility_of_element_located((By.XPATH, "//*[@id=\"pepfar-topnav\"]/ul/li[6]/a/span")))
+        wait.until(EC.visibility_of_element_located((By.XPATH, "//*[contains(@id,\"-topnav\")]/ul/li[6]/a/span")))
         time.sleep(1)
     except TimeoutException:
         return False
@@ -111,4 +111,4 @@ def support(driver, timeout=30):
 
 def logout(driver):
     driver.switch_to.parent_frame()
-    driver.find_element_by_xpath("//*[@id=\"pepfar-topnav\"]/ul/li[6]/a").click()
+    driver.find_element_by_xpath("//*[contains(@id,\"-topnav\")]/ul/li[6]/a").click()

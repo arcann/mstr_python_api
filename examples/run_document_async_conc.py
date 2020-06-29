@@ -195,44 +195,29 @@ class RunConcurrent(object):
         #     self.log.error("-" * 80)
 
     def run(self, jobs_to_create=50):
-        project = "PEPFAR"
+        project = 'my_project'
         user_name = 'Administrator'
         password = keyring.get_password('Development', user_name)
         self.project = project
 
-        self.task_client = TaskProc(base_url='https://devtest.pepfar-panorama.org/MicroStrategy/asp/TaskProc.aspx?',
-                                    server='WIN-NTHRJ60PG84',
+        self.task_client = TaskProc(base_url='https://my_hostname/MicroStrategy/asp/TaskProc.aspx?',
+                                    server='my_server',
                                     project_name=project,
                                     username=user_name,
                                     password=password,
                                     concurrent_max=self.max_concurrent * 2,
                                     )
-        # self.task_client = TaskProc(base_url='https://pepfar-panorama.org/MicroStrategy/asp/TaskProc.aspx?',
-        #                             server='WIN-SA6VMUGPKSI',
-        #                             project_name=project,
-        #                             username=user_name,
-        #                             password=password,
-        #                             concurrent_max=self.max_concurrent * 2,
-        #                             )
 
         folder_objs = contents = self.task_client.get_folder_contents(
-            r"\Public Objects\Reports\POART\I-frames",
+            "\\Public Objects\\Reports\\",
             flatten_structure=True,
             recursive=False,
             type_restriction={ObjectSubType.ReportWritingDocument}
         )
         test_reports = [
-            'Additional Disaggregates_Iframe',
-            'Age Sex Disaggregates_Iframe',
-            'CHIPS-Testing Volume and Yield by Modality Dedup_Iframe',
-            'Coverage Indicator Results_OU-SNU_Iframe',
-            'Mech by SNU Analysis_Iframe',
-            'OVC Visuals Non Dedup_Iframe',
-            'PMTCT Visuals Dedup_Iframe',
-            'SNU Level Analysis_Iframe',
-            'TB/HIV Screening to Treatment Visuals Dedup_Iframe',
-            'Treatment Continuum and Net New Visuals Dedup_Iframe',
-            'VMMC Dedup_Iframe'
+            'A',
+            'B',
+            'C',
         ]
 
         for conc in range(15, 71, 5):

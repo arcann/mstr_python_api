@@ -109,7 +109,6 @@ class Document(ExecutableBase):
                     errors.append(line.decode('ascii'))
                 else:
                     # HTML to scan for
-                    # submitLinkAsForm({href:'Main.aspx?evt=5005&src=Main.aspx.oivm.5005&evtOrigin=fromWait&Main.aspx=-*-yPItZp5r7IpF*-IJZgzwxqws14ic%3D.PEPFAR.*-J*_ncFB16xb7E2ZNf_&oivm=*-1.*-1.0.0.0&smartBanner=*0.2048001.1&rwb=0.BCB75A3D4E247616A91EF19F694BA7EF.Age%2BSex%2BDisaggregates*_Iframe%2B*-281*-29.*-1.0.0.1.-4D8C71F24A1E9C8A6B0094AF39A6060D.0.1.0.0.1.0.*0.0..1.*0.*-1.*0.0.4.428114243.0.100.2000.0.0.0._0.0.*0.1.0.*0.2.gb.0.0.*0&5005=1' });
                     pos1 = line.find(b'submitLinkAsForm({href:')
                     if pos1 != -1:
                         pos2 = line.find(b"'", pos1 + 1)

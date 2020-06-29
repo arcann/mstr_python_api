@@ -8,7 +8,7 @@ import keyring
 from microstrategy_api.task_proc.document import Document
 from microstrategy_api.task_proc.task_proc import TaskProc
 
-base_url = 'https://devtest.pepfar-panorama.org/MicroStrategy/asp/TaskProc.aspx?'
+base_url = 'https://my_hostname/MicroStrategy/asp/TaskProc.aspx?'
 
 
 def run_document(task_api_client, document_guid, prompt_answers_by_attr=None):
@@ -47,8 +47,8 @@ if __name__ == '__main__':
     log.setLevel(logging.DEBUG)
     user_name = 'Administrator'
     password = keyring.get_password('Development', user_name)
-    server = 'WIN-NTHRJ60PG84'
-    project_name = 'PEPFAR'
+    server = 'my_server'
+    project_name = 'my_project'
 
     OU_GUID = '7039371C4B5CC07DC6682D9C0EC8F45C'
 

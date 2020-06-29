@@ -4,10 +4,10 @@ from microstrategy_api.task_proc.task_proc import TaskProc
 
 
 def main():
-    base_url = 'https://devtest.pepfar-panorama.org/MicroStrategy/asp/TaskProc.aspx?'
+    base_url = 'https://my_hostname/MicroStrategy/asp/TaskProc.aspx?'
     user_name = 'Administrator'
-    server = 'WIN-NTHRJ60PG84'
-    project_name = 'PEPFAR'
+    server = 'my_server'
+    project_name = 'my_project'
     password = keyring.get_password('Development', user_name)
 
     task_api_client = TaskProc(

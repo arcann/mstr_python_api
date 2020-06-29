@@ -12,7 +12,7 @@ from microstrategy_api.task_proc.report import Report
 from microstrategy_api.task_proc.status import Status
 from microstrategy_api.task_proc.task_proc import TaskProc
 
-base_url = 'https://devtest.pepfar-panorama.org/MicroStrategy/asp/TaskProc.aspx?'
+base_url = 'https://my_hostname/MicroStrategy/asp/TaskProc.aspx?'
 
 
 def run_report(task_api_client, report_id, prompt_answers_by_attr=None):
@@ -121,8 +121,8 @@ if __name__ == '__main__':
     log.setLevel(logging.DEBUG)
     user_name = 'Administrator'
     password = keyring.get_password('Development', user_name)
-    server = 'WIN-NTHRJ60PG84'
-    project_name = 'PEPFAR'
+    server = 'my_server'
+    project_name = 'my_project'
 
     task_api_client = TaskProc(
         base_url=base_url,

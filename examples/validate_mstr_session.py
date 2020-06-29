@@ -6,9 +6,6 @@ from microstrategy_api.task_proc.exceptions import MstrClientException
 from microstrategy_api.task_proc.privilege_types import PrivilegeTypes
 from microstrategy_api.task_proc.task_proc import TaskProc
 
-base_url = 'https://devtest.pepfar-panorama.org/MicroStrategy/asp/TaskProc.aspx?'
-
-
 def validate_session(session_state):
     """
     Authenticate callers using a MicroStrategy session cookie. Note: The session value needed is not usually
@@ -40,13 +37,12 @@ if __name__ == '__main__':
     logging.basicConfig()
     log = logging.getLogger(__name__)
     log.setLevel(logging.DEBUG)
-    user_name = 'PEPFAR'
+    user_name = 'my_user'
     password = keyring.get_password('Development', user_name)
-    server = 'WIN-NTHRJ60PG84'
-    project_name = 'PEPFAR'
+    server = 'my_server'
+    project_name = 'my_project'
 
     session_state = None
-    # session_state = '0.00000001d7575431f2e9639c7ad0f291eb844fa008a24a181923ffb4e454a48175cd557a8cda5d6267d45a54ddf02d776b315e7f8ddf28ebbd15007f2195f0316d578f138e525494cde73105f67526fe496cb3b89eeefeb7e388ca71641aaf1c19a4f148cd7064a4ed5a4949c2ef18c11c84f774e5df964b13109c330c2a66d521385a2b769aa84731b14e02d68cb570.1033.0.1.America/New*_York.pidn2*_1*_prun*_1.000000010f301c1bdc227fa2b7ebae5edd60faf5a68ffe339071ca3a21e5701eefb7a7c80cd580875fc12b4670578583e31f613a.0.1.1.PEPFAR.111159B147906A00F31BCFB0573D473C.0-1033.1.1_-0.1.0_-1033.1.1_10.1.0.*0.0'
     logout_session = False
     task_api_client = None
 

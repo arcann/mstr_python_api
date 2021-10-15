@@ -6,6 +6,8 @@
 
 Python API library for interacting with MicroStrategy Intelligence Server and/or MicroStrategy Web Server.
 
+This library is not endorsed by, directly affiliated with, maintained, authorized, or sponsored by MicroStragy Incorporated.
+
 Supported MicroStrategy sub-APIs
 
  - TaskProc API

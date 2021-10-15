@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "microstrategy_api"
-version = "0.6.2"
+version = "0.6.3"
 description = "Python API library for interacting with MicroStrategy Intelligence Server and/or MicroStrategy Web Server."
 authors = ["Derek Wood"]
 license= "MIT"
@@ -8,7 +8,7 @@ readme = "README.md"
 repository = "https://github.com/arcann/mstr_python_api"
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = ">=3.6,<4.0"
 requests = "^2.24.0"
 
 [tool.poetry.dev-dependencies]

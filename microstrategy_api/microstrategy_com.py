@@ -6,19 +6,22 @@ import re
 import sys
 from datetime import timedelta, datetime, timezone
 
-import pythoncom
-from pywintypes import com_error
-from win32com.client import gencache, CastTo
+try:
+    import pythoncom
+    from pywintypes import com_error
+    from win32com.client import gencache, CastTo
 
-DSSCOMMaster = gencache.EnsureModule('{7E62D941-9778-11D1-A792-00A024D1C490}', 0, 1, 0)
-DSSDataSource = DSSCOMMaster.DSSDataSource
-IDSSSession = DSSCOMMaster.IDSSSession
-IDSSSource = DSSCOMMaster.IDSSSource
-IDSSFolder = DSSCOMMaster.IDSSFolder
-IDSSSearch = DSSCOMMaster.IDSSSearch
-IDSSUser = DSSCOMMaster.IDSSUser
+    DSSCOMMaster = gencache.EnsureModule('{7E62D941-9778-11D1-A792-00A024D1C490}', 0, 1, 0)
+    DSSDataSource = DSSCOMMaster.DSSDataSource
+    IDSSSession = DSSCOMMaster.IDSSSession
+    IDSSSource = DSSCOMMaster.IDSSSource
+    IDSSFolder = DSSCOMMaster.IDSSFolder
+    IDSSSearch = DSSCOMMaster.IDSSSearch
+    IDSSUser = DSSCOMMaster.IDSSUser
 
-constants = DSSCOMMaster.constants
+    constants = DSSCOMMaster.constants
+except ImportError as com_import_error:
+    raise ImportError(f"MicroStrategyCom requires pywin32 to be installed.  Underlying error '{com_import_error}'")
 
 
 class MicroStrategyCom(object):
@@ -26,7 +29,7 @@ class MicroStrategyCom(object):
         pythoncom.CoInitialize()
         self.log = logging.getLogger("{mod}.{cls}".format(mod=self.__class__.__module__, cls=self.__class__.__name__))
         self.log.debug('Creating MicroStrategyCom({server},{user_id}'.format(server=server, user_id=user_id))
-        if sys.maxsize > 2**32:
+        if sys.maxsize > 2 ** 32:
             raise RuntimeError("MicroStrategyCom only works on 32bit Python "
                                "due to the MicroStrategy COM API being 32 bit")
         self._object_server = self.get_server_connection(server, user_id, password, new_password=new_password)
@@ -97,7 +100,7 @@ class MicroStrategyCom(object):
         if self._object_server is not None:
             self._object_server.Reset()
 
-    def users_search(self, name_pattern: str=None, id_pattern: str=None) -> IDSSFolder:
+    def users_search(self, name_pattern: str = None, id_pattern: str = None) -> IDSSFolder:
         # See usage
         # https://lw.microstrategy.com/msdz/MSDL/104/docs/DevLib/sdk_iserver/api_ref/interface_i_d_s_s_search-members.html
         search = self.object_source.NewObject(Type=constants.DssTypeSearch,
@@ -121,7 +124,7 @@ class MicroStrategyCom(object):
             pUserRuntime=self.session.UserRuntime,
             Cookie=0,
             UserData=0
-            )
+        )
         return results
 
     def list_groups(self):
@@ -130,7 +133,7 @@ class MicroStrategyCom(object):
         for i in range(1, groups.Count() + 1):
             print(groups.Item(i).Name)
 
-    def list_users(self, id_pattern = None, name_pattern = None):
+    def list_users(self, id_pattern=None, name_pattern=None):
         acct_services = self.session.ClientServices.UserAcctSvcs
         users = acct_services.Users
         for i in range(1, users.Count() + 1):
@@ -227,6 +230,3 @@ class MicrostrategyUnexpectedError(Exception):
 
 class MicrostrategyPasswordError(Exception):
     pass
-
-
-

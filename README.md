@@ -16,7 +16,16 @@ Supported MicroStrategy sub-APIs
 
 ## Installation
 
-Install using `pip install -U microstrategy-api` or `conda install microstrategy-api -c conda-forge`.
+### Using pip
+
+`pip install -U microstrategy-api`
+
+### Using conda
+`conda install microstrategy-api -c conda-forge`
+
+### Using poetry
+
+`poetry add microstrategy-api`
 
 # Examples
 
